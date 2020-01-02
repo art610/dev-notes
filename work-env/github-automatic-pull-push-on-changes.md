@@ -6,7 +6,7 @@ description: >-
 
 # Github Automatic Pull/Push on changes
 
-Установить Git на локальный компьютер и настроить подключение по SSH к GitHub аккаунту. Ключ будет расположен в &lt;id\_rsa\_path&gt;.
+Установить Git на локальный компьютер и настроить подключение по SSH к GitHub аккаунту. Ключ будет расположен в &lt;id\_rsa\_path&gt;.2
 
 Установить [Go Lang Env](https://golang.org/doc/install) для сборки из исходников Gitomatic \([git-o-matic](https://github.com/muesli/gitomatic/blob/master/README.md)\). Получить пакеты и собрать данную утилиту.
 
