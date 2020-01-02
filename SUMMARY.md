@@ -5,5 +5,4 @@
 ## Work env
 
 * [Github Automatic Pull/Push on changes](work-env/github-automatic-pull-push-on-changes.md)
-* [SomeTestPAge](work-env/sometestpage.md)
 
