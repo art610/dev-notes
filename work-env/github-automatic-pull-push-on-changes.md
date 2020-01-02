@@ -1,3 +1,9 @@
+---
+description: >-
+  Automatic repository updates with Git-o-matic using Windows-Git-Github-Gitbook
+  chain.
+---
+
 # Github Automatic Pull/Push on changes
 
 Установить Git на локальный компьютер и настроить подключение по SSH к GitHub аккаунту. Ключ будет расположен в &lt;id\_rsa\_path&gt;.
