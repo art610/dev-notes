@@ -1,4 +1,37 @@
 # Github Automatic Pull/Push on changes
 
-ds
+Установить Git на локальный компьютер и настроить подключение по SSH к GitHub аккаунту. Ключ будет расположен в &lt;id\_rsa\_path&gt;.
+
+Установить [Go Lang Env](https://golang.org/doc/install) для сборки из исходников Gitomatic \([git-o-matic](https://github.com/muesli/gitomatic/blob/master/README.md)\). Получить пакеты и собрать данную утилиту.
+
+```text
+git clone https://github.com/muesli/gitomatic.git
+cd gitomatic
+go build
+```
+
+После сборки полученную директорию сохранить и использовать при запуске путь до файла gitomatic &lt;gitomatic\_path&gt;, либо занести путь в переменные среды Windows.
+
+Инициализировать новый, либо получить один из старых репозиториев. Перейти в папку данного репозитория и установить внешнюю ссылку на него:
+
+```text
+git clone git@github.com...
+cd <local_repo_dir>
+git remote set-url --add origin git@github.com...    # --delete 
+```
+
+Создать bat-файл и конвертировать его в exe \(64-bit, без отображения консоли и запроса на права администратора\):
+
+```text
+@echo off
+
+<gitomatic_path>\gitomatic -privkey <id_rsa_path>/git_id_rsa <local_repo_dir>    # without ending slash 
+```
+
+Полученный exe-файл добавляем в папку на автозагрузку \(просто переносим его туда\):
+
+```text
+Win+R # "Выполнить"
+shell:startup    # откроет папку программ на автозагрузку
+```
 
