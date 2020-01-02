@@ -17,7 +17,7 @@ go build
 ```text
 git clone git@github.com...
 cd <local_repo_dir>
-git remote set-url --add origin git@github.com...    # --delete 
+git remote set-url --add origin git@github.com...    # --delete
 ```
 
 Создать bat-файл и конвертировать его в exe \(64-bit, без отображения консоли и запроса на права администратора\):
@@ -25,7 +25,7 @@ git remote set-url --add origin git@github.com...    # --delete
 ```text
 @echo off
 
-<gitomatic_path>\gitomatic -privkey <id_rsa_path>/git_id_rsa <local_repo_dir>    # without ending slash 
+<gitomatic_path>\gitomatic -privkey <id_rsa_path>/git_id_rsa <local_repo_dir>    # without ending slash
 ```
 
 Полученный exe-файл добавляем в папку на автозагрузку \(просто переносим его туда\):
@@ -34,3 +34,6 @@ git remote set-url --add origin git@github.com...    # --delete
 Win+R # "Выполнить"
 shell:startup    # откроет папку программ на автозагрузку
 ```
+
+ser
+
