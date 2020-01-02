@@ -34,6 +34,3 @@ git remote set-url --add origin git@github.com...    # --delete
 Win+R # "Выполнить"
 shell:startup    # откроет папку программ на автозагрузку
 ```
-
-ser
-
