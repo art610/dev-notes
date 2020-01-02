@@ -23,7 +23,9 @@ go build
 ```text
 git clone git@github.com...
 cd <local_repo_dir>
-git remote set-url --add origin git@github.com...    # --delete
+
+git remote set-url --add origin git@github.com...
+git remote set-url --delete origin https://...
 ```
 
 Создать bat-файл и конвертировать его в exe \(64-bit, без отображения консоли и запроса на права администратора\):
