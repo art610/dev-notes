@@ -5,4 +5,5 @@
 ## Work env
 
 * [Github Automatic Pull/Push on changes](work-env/github-automatic-pull-push-on-changes.md)
+* [Simple note](work-env/simple-note.md)
 
