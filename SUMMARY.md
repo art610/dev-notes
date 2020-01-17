@@ -5,5 +5,6 @@
 ## Work env
 
 * [Github Automatic Pull/Push on changes](work-env/github-automatic-pull-push-on-changes.md)
-* [Simple note](work-env/simple-note.md)
+* [Разработка программного обеспечения](work-env/simple-note.md)
+* [Постановка задачи на разработку ПО](work-env/postanovka-zadachi-na-razrabotku-po.md)
 
