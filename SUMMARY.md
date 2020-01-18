@@ -8,3 +8,7 @@
 * [Разработка программного обеспечения](work-env/simple-note/README.md)
   * [Постановка задачи на разработку ПО](work-env/simple-note/postanovka-zadachi-na-razrabotku-po.md)
 
+## Бизнес и системная архитектура
+
+* [Бизнес-процессы и системный анализ](biznes-i-sistemnaya-arkhitektura/biznes-processy-i-sistemnyi-analiz.md)
+
