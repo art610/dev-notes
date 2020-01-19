@@ -7,6 +7,7 @@
 * [Github Automatic Pull/Push on changes](work-env/github-automatic-pull-push-on-changes.md)
 * [Разработка программного обеспечения](work-env/simple-note/README.md)
   * [Постановка задачи на разработку ПО](work-env/simple-note/postanovka-zadachi-na-razrabotku-po.md)
+  * [Теория систем](work-env/simple-note/teoriya-sistem.md)
 
 ## Бизнес и системная архитектура
 
