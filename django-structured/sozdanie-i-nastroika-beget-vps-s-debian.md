@@ -214,7 +214,7 @@ sudo nano /etc/apt/sources.list
 
 Можно привести файл `/etc/apt/sources.list`к следующему виду:
 
-```text
+```bash
 deb http://deb.debian.org/debian buster main contrib non-free
 deb-src http://deb.debian.org/debian buster main contrib non-free
 deb http://security.debian.org/ buster/updates main contrib non-free
@@ -227,11 +227,14 @@ deb-src http://deb.debian.org/debian buster-backports main contrib non-free
 
 Далее выполняем ряд команд для установки необходимого окружения:
 
-```text
+```bash
+# повышаем права до root и переходим в домашнюю директорию root-пользователя
+sudo su
+cd ~
 # обновляем зависимости и пакеты
-sudo apt-get -y update
-sudo apt-get -y dist-upgrade
-
+apt-get -y update && apt-get -y dist-upgrade
+# устанавливаем необходимые пакеты одной командной
+sudo apt-get -y install libtiff5-dev libjpeg62-turbo-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev gcc g++ libc-dev curl man ufw
 ```
 
 
