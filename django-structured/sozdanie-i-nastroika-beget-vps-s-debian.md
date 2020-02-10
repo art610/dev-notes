@@ -175,18 +175,21 @@ sudo nano /etc/ssh/sshd_config
     PasswordAuthentication no    # аутентификация по паролям, также повторяется в самом конце файла (повторяемый параметр удалить)
     PermitEmptyPasswords no    # допустимость пустых паролей
     RhostsRSAAuthentication no
-    UsePAM no
+    UsePAM yes    # использование API Pluggable Authentication Modules для доступа внешних программ
     # в конце файла удалить повтор PasswordAuthentication yes
 
 # затем перезапускаем службу ssh 
 sudo service sshd restart
 ```
 
-Более подробно про повышение безопасности сервера при доступе к нему по SSH можно прочитать, например, по ссылке [https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html](https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html)
+Теперь, сервер более защищен, и удаленный вход доступен только для системных пользователей по ключам SSH. Ограничено время на выполнение входа и максимальное количество неудачных попыток входа. Для того, чтобы заблокировать доступ отдельному пользователю необходимо удалить его SSH ключ из соответствующего файла `/home/<username>/.ssh/authorized_keys` \(редактирование данного файла было описано выше\) и затем, при необходимости, можно также удалить аккаунт данного пользователя следующей командой:
 
-### Удаление пользователя и прав доступа к серверу
+```text
+sudo killall -u <username>    # завершить все процессы пользователя
+userdel -r <username>    # удалить учетную запись пользователя и его домашний каталог
+```
 
-
+Для дополнительной защиты от брутфорса можно воспользоваться утилитой fail2ban. Дополнительно настроить порты и т.п. Более подробно про повышение безопасности сервера при доступе к нему по SSH можно прочитать, например, по ссылке [https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html](https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html)
 
 ## 
 
