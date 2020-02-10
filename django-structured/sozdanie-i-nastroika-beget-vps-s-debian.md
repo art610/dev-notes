@@ -374,7 +374,7 @@ su - djangouser
 
 #### 
 
-#### Создаем виртуальное окружение и устанавливаем Django
+### Создаем виртуальное окружение и устанавливаем Django
 
 Команда `django-admin startproject <PROJECT_NAME>` создаст одноименный каталог и пакет проекта в каталоге, в котором она была запущена. Параметр `<destination>` позволяет задать целевой каталог, если команда запускается в другом каталоге.
 
@@ -411,7 +411,7 @@ deactivate
 exit    # [root]
 ```
 
-#### Устанавливаем и настраиваем связку uWSGI/NGINX
+### Устанавливаем и настраиваем связку uWSGI/NGINX
 
 ```bash
 # переходим в каталог проекта
@@ -573,5 +573,153 @@ uwsgi --ini /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_uwsgi.in
 
 При наличии ошибок стоит смотреть журнал в файл `/var/log/nginx/error.log`
 
+### Запускаем приложение в режиме Emperor
 
+Создаем папки для активации конфигов uwsgi из-под root-пользователя:
+
+```bash
+mkdir /etc/uwsgi/
+mkdir /etc/uwsgi/apps-available/
+mkdir /etc/uwsgi/apps-enabled/
+```
+
+Добавляем симлинк из нашего приложения `(djproject_uwsgi.ini)` в `/apps-enabled/` для активации данной конфигурации:
+
+```bash
+sudo ln -s /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_uwsgi.ini /etc/uwsgi/apps-enabled/
+```
+
+Для запуска теперь используем параметр `--emperor`, в который передаем путь к файлам конфигурации всех наших приложений:
+
+```bash
+uwsgi --emperor /etc/uwsgi/apps-enabled --uid djangouser
+```
+
+Все конфигурации NGINX/uWSGI, с которыми мы работаем, теперь нужно активировать симлинком в соответствующие директории:
+
+NGINX -&gt; `/etc/nginx/sites-enabled/`   
+uWSGI -&gt; `/etc/uwsgi/apps-enabled/`
+
+Основные конфигурации для веб-приложения будут храниться в папке с проектом, а файл uwsgi-params в `/etc/nginx/uwsgi_params`
+
+### Создаем службу для системного запуска
+
+Установим системный демон для запуска, создаем файл и записываем туда:
+
+```bash
+sudo nano /etc/systemd/system/djproject.uwsgi.service
+```
+
+В данный файл добавляем следующее:
+
+```bash
+[Unit]
+Description=uWSGI Emperor Service
+After=syslog.target
+
+[Service]
+ExecStart=/usr/local/bin/uwsgi --emperor /etc/uwsgi/apps-enabled --uid djangouser 
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+Restart=always
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Теперь мы можем запускать uwsgi и соответствующие проекты в режиме Emperor как системную службу \(запуск производим от root\):
+
+Запускаем и включаем uWSGI при загрузке:
+
+```bash
+systemctl enable djproject.uwsgi.service
+systemctl start djproject.uwsgi.service
+```
+
+Запускаем и включаем Nginx при загрузке:
+
+```bash
+systemctl enable nginx
+systemctl start nginx
+```
+
+Перезагрузка и проверка конфигурации:
+
+```bash
+nginx -t
+sudo /etc/init.d/nginx restart
+systemctl restart djproject.uwsgi.service
+```
+
+## Установка и подключение базы данных PostgreSQL
+
+Устанавливаем дополнительные пакеты
+
+```bash
+sudo apt-get -y install libpq-dev postgresql postgresql-contrib
+
+su - djangouser
+workon djangoenv
+cdvirtualenv
+
+sudo pip install psycopg2
+```
+
+Заходим под стандартным пользователем postgres в СУБД и создаем базу данных и пользователя:
+
+```bash
+sudo su - postgres 
+psql
+# вводим запрос для создания базы данных и пользователя
+CREATE DATABASE djprojectdb with encoding='UNICODE';
+CREATE USER djprojectdbusr with password '******************';
+GRANT ALL PRIVILEGES ON DATABASE djprojectdb TO djprojectdbusr;
+# выходим из psql и закрываем сеанс пользователя postgres
+\q
+exit
+```
+
+Добавляем подключение к БД в настройки Django: Открываем `sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/settings.py` 
+
+Ищем запись с DATABASES = ... и заносим/меняем на:
+
+```bash
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'djprojectdb',
+        'USER': 'djprojectdbusr',
+        'PASSWORD': 'OQ*EbaAA04MBU%bp',
+        'HOST': 'localhost',
+        'PORT': '',
+    }
+}
+# при необходимости устанавливаем русский язык и зону
+LANGUAGE_CODE = 'ru-ru' 
+TIME_ZONE = 'Europe/Moscow'
+```
+
+Делаем миграции в БД и создаем аккаунт администратора:
+
+```bash
+cd djproject
+pip install psycopg2
+python manage.py migrate
+python manage.py createsuperuser
+deactivate
+exit    # [root]
+```
+
+Перезапускаем и проверяем установку
+
+```bash
+nginx -t
+sudo /etc/init.d/nginx restart
+systemctl restart djproject.uwsgi.service
+```
+
+### Выпуск SSL сертификата для домена
 
