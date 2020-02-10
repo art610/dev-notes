@@ -1,3 +1,10 @@
+---
+description: >-
+  Инструкция по установке стека из веб/прокси-сервера NGINX, wsgi-сервера uWSGI,
+  базы данных PostgreSQL и фреймворка Django (python 3.8.1) на виртуальном
+  сервере Beget VPS с Linux Debian 10 Buster.
+---
+
 # Создание и настройка Beget VPS с Debian
 
 ## Создание Beget VPS
@@ -192,6 +199,40 @@ userdel -r <username>    # удалить учетную запись польз
 Для дополнительной защиты от брутфорса можно воспользоваться утилитой fail2ban. Дополнительно настроить порты и т.п. Более подробно про повышение безопасности сервера при доступе к нему по SSH можно прочитать, например, по ссылке [https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html](https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html)
 
 ## Первичная настройка сервера Debian
+
+Дальнейшие действия производим непосредственно на удаленном сервере Debian при подключении по SSH через утилиту PuTTY. В самом начале добавим возможность получения пакетов из non-free репозиториев, для этого необходимо отредактировать файл sources.list. Однако на Beget VPS данный файл создается автоматически и может быть затем перезаписан, ввиду этого  необходимо изменить параметр`apt_preserve_sources_list: true` в файле `/etc/cloud/cloud.cfg`, для этого используем следующие команды:
+
+```text
+# открываем файл редактором nano для добавления параметра
+sudo nano /etc/cloud/cloud.cfg
+# добавим в конец файла параметр apt_preserve_sources_list: true в файле и сохраним изменения
+
+# редактируем файл sources.list (добавляем contrib non-free для каждого репозитория)
+sudo nano /etc/apt/sources.list
+# сохраняем изменения: Ctrl+X затем Y и Enter
+```
+
+Можно привести файл `/etc/apt/sources.list`к следующему виду:
+
+```text
+deb http://deb.debian.org/debian buster main contrib non-free
+deb-src http://deb.debian.org/debian buster main contrib non-free
+deb http://security.debian.org/ buster/updates main contrib non-free
+deb-src http://security.debian.org/ buster/updates main contrib non-free
+deb http://deb.debian.org/debian buster-updates main contrib non-free
+deb-src http://deb.debian.org/debian buster-updates main contrib non-free
+deb http://deb.debian.org/debian buster-backports main contrib non-free
+deb-src http://deb.debian.org/debian buster-backports main contrib non-free
+```
+
+Далее выполняем ряд команд для установки необходимого окружения:
+
+```text
+# обновляем зависимости и пакеты
+sudo apt-get -y update
+sudo apt-get -y dist-upgrade
+
+```
 
 
 
