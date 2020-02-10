@@ -13,3 +13,7 @@
 
 * [Бизнес-процессы и системный анализ](biznes-i-sistemnaya-arkhitektura/biznes-processy-i-sistemnyi-analiz.md)
 
+## Django Structured
+
+* [Создание и настройка Beget VPS с Debian](django-structured/sozdanie-i-nastroika-beget-vps-s-debian.md)
+
