@@ -241,7 +241,7 @@ apt-get -y update && apt-get -y dist-upgrade
 # настраиваем firewall утилитой ufw
 ufw default deny incoming
 ufw default allow outgoing
-ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 8000/tcp && ufw allow 8080/tcp && ufw allow 443/tcp
+ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 8000/tcp && ufw allow 443/tcp
 
 # сразу настроим глобальные параметры git
 sudo git config --global user.name "ProductionServer01"
@@ -654,7 +654,7 @@ sudo /etc/init.d/nginx restart
 systemctl restart djproject.uwsgi.service
 ```
 
-## Установка и подключение базы данных PostgreSQL
+### Установка и подключение базы данных PostgreSQL
 
 Устанавливаем дополнительные пакеты
 
@@ -722,4 +722,364 @@ systemctl restart djproject.uwsgi.service
 ```
 
 ### Выпуск SSL сертификата для домена
+
+Запускаем Certbot с данными эл. почты и домена \(потребуется добавить к DNS домена запись TXT с указанным кодом acme, подождать 15 минут и отправить на одобрение запрос\):
+
+```bash
+certbot certonly --preferred-challenges=dns --agree-tos -m ikelart@yandex.ru -d *.lnovus.online -d lnovus.online --manual --server https://acme-v02.api.letsencrypt.org/directory
+```
+
+Выводим данные о сертификате и ключе \(необходимо получить путь к файлам\):
+
+```bash
+echo -e "\033[32m $(certbot certificates) \033[0m"
+```
+
+Полученный путь будет выглядеть следующим образом:
+
+```bash
+Certificate Path: /etc/letsencrypt/live/<SERVER_DOMEN>/fullchain.pem
+Private Key Path: /etc/letsencrypt/live/<SERVER_DOMEN>/privkey.pem
+```
+
+Теперь необходимо правильно настроить конфигурацию nginx и перезапустить службы: Обновим зависимости и отредактируем файл конфигурации NGINX:
+
+```bash
+# обновляем зависимости
+sudo apt-get -y update && apt-get -y dist-upgrade
+sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_nginx.conf
+```
+
+Окончательный вид файла конфигурации NGINX следующий:
+
+```bash
+upstream djproject {
+	server unix:///home/djangouser/.virtualenvs/djangoenv/djproject/djproject.sock;
+}
+server {
+  listen 80;
+  listen [::]:80;
+	server_name lnovus.online www.lnovus.online;
+	return 301 https://$server_name$request_uri;
+}
+
+server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+
+        ssl on;
+        ssl_certificate /etc/letsencrypt/live/lnovus.online/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/lnovus.online/privkey.pem;
+
+        server_name www.lnovus.online;
+        return 301 $scheme://lnovus.online;
+}
+
+server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+        charset     utf-8;
+        
+        ssl on;
+        ssl_certificate /etc/letsencrypt/live/lnovus.online/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/lnovus.online/privkey.pem;
+	
+	      server_name lnovus.online;
+	      client_max_body_size 75M;
+	
+	      location /media  {
+	      	      alias /home/djangouser/.virtualenvs/djangoenv/djproject/media;
+	      }
+	
+	      location /static {
+	      	      alias /home/djangouser/.virtualenvs/djangoenv/djproject/static;
+	      }
+	
+	      location / {
+	      	      uwsgi_pass  djproject;
+	      	      include     /etc/nginx/uwsgi_params;
+	      }
+}
+```
+
+Перезагрузка и проверка конфигурации:
+
+```bash
+nginx -t
+sudo /etc/init.d/nginx restart
+systemctl restart djproject.uwsgi.service
+```
+
+Закрываем 80 \(это запретит переход по IP адресу сервера\) и 8000 порт при помощи ufw:
+
+```bash
+ufw deny 80/tcp && ufw deny 8000/tcp
+```
+
+Теперь сайт можно открыть только если указать домен. Соответственно остается доступ на портах 22 для ssh подключения и 443 для https.
+
+Устанавливаем по умолчанию конфигурацию из файла production.py:
+
+```bash
+sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/settings/production.py
+```
+
+### 
+
+### Разделение Dev и Production конфигураций Django
+
+Чтобы создать настройки для сервера разработки dev.py и для продакшена production.py мы разнесем файл settings.py. Создаем папку settings в директории с файлом settings.py, затем переносим файл settings.py в папку settings и переименовываем его в base.py \(наши базовые настройки Django\). 
+
+Создаем в папке settings файл dev.py \(настройки на время разработки\) и файл production.py \(настройки для боевого сервера\).
+
+```bash
+# Заходим за пользователя djangouser
+su - djangouser
+# переходим в папку проекта где лежит файл settings.py
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/
+# создаем директорию settings
+mkdir settings
+# переносим файл settings.py в директорию settings и переименовываем
+mv settings.py settings/base.py
+```
+
+В директории settings создаем файл dev.py `sudo nano settings/dev.py` и заносим в него следующее:
+
+```bash
+# импортируем общие базовые настройки
+from .base import *
+
+# режим отладки при разработке будет включен
+DEBUG = True
+# доступ будет разрешен с любого хоста
+ALLOWED_HOSTS = ['*']
+
+# подключаем при разработке базу данных SQLite
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+
+# Статические файлы в ходе разработки укажем как директорию
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
+
+# импортируем все локальные конфиги
+try:
+    from .local_settings import *
+except ImportError:
+    pass
+```
+
+Далее также создаем файл production.py `sudo nano settings/production.py` и заносим в него следующее:
+
+```bash
+# также импортируем базовые настройки
+from .base import *
+# отключаем режим отладки
+DEBUG = False
+# указываем только основные хосты 
+ALLOWED_HOSTS = ['lnovus.online', 'www.lnovus.online']
+
+# подключаем базу данных PostgreSQL на production
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'djprojectdb',
+        'USER': 'djprojectdbusr',
+        'PASSWORD': 'OQ*EbaAA04MBU%bp',
+        'HOST': 'localhost',
+        'PORT': '',
+    }
+}
+
+# на продакшн статические файлы укажем как рут
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
+# также импортируем локальные конфиги
+try:
+    from .local_settings import *
+except ImportError:
+    pass
+```
+
+Редактируем файл base.py `sudo nano settings/base.py` до следующего вида:
+
+```bash
+import os
+
+# мы спустились на одну директорию ниже, чем было раньше
+# поэтому изменим BASE_DIR на правильный
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(PROJECT_DIR)
+
+# секретный ключ мы храним как переменную окружения, чтобы не передать её никуда
+SECRET_KEY = os.environ["SECRET_KEY_VALUE"]
+
+
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "astra.urls"
+
+# используем стандартный шаблонизатор
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.media",
+            ]
+        },
+    },
+]
+
+WSGI_APPLICATION = "astra.wsgi.application"
+
+
+# Password validation
+# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+
+# Internationalization
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
+
+LANGUAGE_CODE = "ru-ru"
+TIME_ZONE = "Europe/Moscow"
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
+
+STATIC_URL = "/static/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
+MEDIA_URL = "/media/"
+```
+
+Теперь изменим ссылки на файлы конфигурации в manage.py и в wsgi.py:
+
+```bash
+sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/manage.py
+sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/wsgi.py
+```
+
+Заменим строку `os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djproject.settings")`   
+на `os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djproject.settings.production")`
+
+Перезагрузка и проверка конфигурации:
+
+```bash
+nginx -t
+sudo /etc/init.d/nginx restart
+systemctl restart djproject.uwsgi.service
+```
+
+Теперь, пока мы не создадим приложение и не укажем правильное перенаправление при переходе в браузере будет указана ошибка 404 \(страница не найдена\). Для проверки работоспособности Django переходим в панель администрирования и пробуем зайти под созданными ранее учетными данными администратора `domain.com/admin`
+
+Далее создадим простое приложения для проведения различных проверок.
+
+```bash
+# за djangouser заходим в директорию проекта под вирт. окр.
+su - djangouser
+cd /home/djangouser/.virtualenvs/djangoenv/djproject
+workon djangoenv
+# создаем приложение testapp (будет создан каркас приложения)
+python manage.py startapp testapp
+# добавим новое приложение в INSTALLED_APPS
+sudo nano djproject/settings/base.py
+# В итоге приводим INSTALLED_APPS к следующему виду
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'testapp.apps.TestappConfig',    # новое приложение
+]
+```
+
+Редактируем представление нового приложения:
+
+```bash
+sudo nano testapp/views.py
+
+# testapp/views.py
+from django.http import HttpResponse
+
+
+def homePageView(request):
+    return HttpResponse("Server working, but we havn't interfaces")
+```
+
+Создаем файл с перенаправлениями \(роутер для приложения\):
+
+```bash
+sudo nano testapp/urls.py
+
+# testapp/urls.py
+from django.urls import path
+
+from .views import homePageView
+
+urlpatterns = [
+    path('', homePageView, name='home')
+]
+```
+
+Редактируем глобальный роутер проекта:
+
+```bash
+sudo nano djproject/urls.py
+
+# djproject/urls.py
+from django.contrib import admin
+from django.urls import path, include # new
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('testapp.urls')), # new
+]
+```
 
