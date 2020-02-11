@@ -434,10 +434,11 @@ cd /home/djangouser/.virtualenvs/djangoenv/djproject/
 uwsgi --http :8000 --module djproject.wsgi
 ```
 
-Для работы со статикой и медиа создаем папку media \(если её нет в папке проекта\) и заносим для проверки в нее изображение media.jpg:
+Для работы со статикой и медиа создаем папки static и media \(если нет в папке проекта\) и заносим для проверки в media изображение media.jpg:
 
 ```bash
 mkdir media
+mkdir static
 cd media 
 wget  https://i.redd.it/jsnlg9kwvtxx.jpg
 mv jsnlg9kwvtxx.jpg media.jpg
@@ -446,7 +447,7 @@ uwsgi --http :8000 --module djproject.wsgi
 # переходим по <server-ip>:8000/media/media.jpg и если видим картинку, то всё хорошо
 # если возникла ошибка, то нам нужно добавить MEDIA_ROOT
 sudo nano djproject/settings.py
-# добавляем 
+# добавляем только для development
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = '/media/'
 # если возникает ошибка - открываем файл urls.py
@@ -485,9 +486,6 @@ TEMPLATES = [
 ]
 # Добавим параметр (если он отсутствует) STATIC_ROOT в конец файла settings.py
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
-# Создаем папку под статику
-mkdir static
 
 # запускаем виртуальное окружение и переносим статику
 workon djangoenv
@@ -787,12 +785,16 @@ server {
 	      server_name lnovus.online;
 	      client_max_body_size 75M;
 	
-	      location /media  {
-	      	      alias /home/djangouser/.virtualenvs/djangoenv/djproject/media;
+				location = /favicon.ico { access_log off; log_not_found off; }
+	      
+		    location /static {
+								autoindex on;
+	      	      alias /home/djangouser/.virtualenvs/djangoenv/djproject/static/;
 	      }
 	
-	      location /static {
-	      	      alias /home/djangouser/.virtualenvs/djangoenv/djproject/static;
+				location /media  {
+								autoindex on;
+	      	      alias /home/djangouser/.virtualenvs/djangoenv/djproject/media/;
 	      }
 	
 	      location / {
@@ -800,6 +802,7 @@ server {
 	      	      include     /etc/nginx/uwsgi_params;
 	      }
 }
+
 ```
 
 Перезагрузка и проверка конфигурации:
@@ -862,14 +865,18 @@ DATABASES = {
     }
 }
 
-# Статические файлы в ходе разработки укажем как директорию
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
+
+STATIC_URL = "/static/"
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_URL = '/media/'
 
 # импортируем все локальные конфиги
 try:
@@ -883,6 +890,9 @@ except ImportError:
 ```bash
 # также импортируем базовые настройки
 from .base import *
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ["SECRET_KEY_VALUE"]
 # отключаем режим отладки
 DEBUG = False
 # указываем только основные хосты 
@@ -900,7 +910,10 @@ DATABASES = {
     }
 }
 
-# на продакшн статические файлы укажем как рут
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
+
+STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 # также импортируем локальные конфиги
@@ -919,9 +932,6 @@ import os
 # поэтому изменим BASE_DIR на правильный
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = os.path.dirname(PROJECT_DIR)
-
-# секретный ключ мы храним как переменную окружения, чтобы не передать её никуда
-SECRET_KEY = os.environ["SECRET_KEY_VALUE"]
 
 
 INSTALLED_APPS = [
@@ -987,14 +997,6 @@ TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.2/howto/static-files/
-
-STATIC_URL = "/static/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-MEDIA_URL = "/media/"
 ```
 
 Теперь изменим ссылки на файлы конфигурации в manage.py и в wsgi.py:
@@ -1081,5 +1083,39 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('testapp.urls')), # new
 ]
+
 ```
+
+### Установка SECRET\_KEY как переменной системного сервиса
+
+Для того, чтобы не выдавать секретный ключ при удаленном хранении кода, его необходимо поместить в переменную системного фонового процесса, и делать вызов непосредственно от туда.
+
+```bash
+# в settings/production.py пропишем вызов переменной окружения
+SECRET_KEY = os.environ["SECRET_KEY_VALUE"]
+
+# заходим под пользователем <DJANGO_USER> и устанавливаем для него системную переменную окружения
+su - djangouser
+export SECRET_KEY_VALUE='ifqy==gk35kn#piau4xwxru5(68afbk#7fxr2urj_#ezw1s04y'
+# обращаем внимание на одинарные кавычки (они экранируют служебные символы Bash)
+# выходим за root
+exit
+# передаем переменную системному сервису
+sudo nano /etc/systemd/system/djproject.uwsgi.service
+# добавляем туда --env таким образом
+ExecStart=/usr/local/bin/uwsgi --emperor /etc/uwsgi/apps-enabled --uid <DJANGO_USER> --env SECRET_KEY_VALUE='<value>'
+# пароль к базе данных мы храним в отдельном файле настроек production.py
+# причем удаленный доступ к БД закрыт (порт закрыт)
+
+# перезапускаем демона
+systemctl daemon-reload
+# перезапускаем веб-сервера
+systemctl restart djproject.uwsgi.service && sudo /etc/init.d/nginx restart
+```
+
+Теперь наш секретный ключ и пароль к базе данных будут всегда оставаться на сервере, где им самое место. Главное файлы конфигурации и настроек сервера исключать из контроля версий и т.п.
+
+### Настраиваем взаимодействие с GitHub и средой разработки
+
+Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py
 
