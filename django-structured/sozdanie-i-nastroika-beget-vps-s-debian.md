@@ -1012,6 +1012,7 @@ USE_TZ = True
 ```bash
 sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/manage.py
 sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/wsgi.py
+sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/asgi.py
 ```
 
 Заменим строку `os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djproject.settings")`   
@@ -1202,5 +1203,66 @@ ulimit -n 200000
 
 ## Контроль версий Git, сервис GitHub и среда разработки
 
-Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py
+Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py и файл unix-сокета. 
+
+Берем из основной папки файл **manage.py** и папки со статикой и медиа **static/** **media/**, из папки с настройками проекта файлы **settings.py**, **urls.py** и **wsgi.py**. При создании приложений также берем основные файлы из них \(models.py, urls.py, views.py и подобные\).
+
+```bash
+# переходим в основную папку проекта и инициализируем репозиторий
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/
+git init
+
+# создаем .gitignore и добавляем туда всё, что нам не понадобится
+sudo nano .gitignore 
+
+# добавляем в .gitignore следующее
+
+### Django ###
+*.log
+*.pyc
+db.sqlite3
+djproject_nginx.conf
+djproject_uwsgi.ini
+djproject/settings/production.py
+*.pyo
+*~
+media/**
+**/__pycache__/*
+*.py[cod]
+
+# C extensions
+*.so
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Translations
+*.mo
+*.pot
+
+# PyBuilder
+target/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Sphinx documentation
+docs/_build/
+
+# Thumbnails
+._*
+favicon.ico
+```
 
