@@ -1115,7 +1115,84 @@ systemctl restart djproject.uwsgi.service && sudo /etc/init.d/nginx restart
 
 Теперь наш секретный ключ и пароль к базе данных будут всегда оставаться на сервере, где им самое место. Главное файлы конфигурации и настроек сервера исключать из контроля версий и т.п.
 
-### Настраиваем взаимодействие с GitHub и средой разработки
+## Служебные команды Django и окружения
+
+```bash
+# проверка production сервера на уязвимости
+su - djangouser
+workon djangoenv
+cdvirtualenv
+cd djproject
+python manage.py check --deploy
+
+# управление службами/сервисами
+# перезагрузить системного демона Emperor (фоновый процесс)
+systemctl daemon-reload
+# перезагрузка uWSGI (также команды start/stop)
+systemctl restart djproject.uwsgi.service 
+# перезагрузка NGINX
+sudo /etc/init.d/nginx restart
+
+# управление и проверка конфигурации NGINX
+nginx -t
+sudo service nginx <start|stop|restart>
+# перезапускаем веб-сервера с прокси
+systemctl restart djproject.uwsgi.service && sudo /etc/init.d/nginx restart
+
+# работа с Django
+# заходим за djangouser
+su - djangouser
+# запускаем виртуальное окружение
+workon djangoenv
+
+# директория проекта Django
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/
+
+# файлы конфигурации uWSGI
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_uwsgi.ini
+
+# файлы конфигурации NGINX
+/etc/nginx/nginx.conf
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_nginx.conf
+/etc/nginx/sites-available/
+
+# пути к сертификату SSL
+/etc/letsencrypt/live/lnovus.online/fullchain.pem
+/etc/letsencrypt/live/lnovus.online/privkey.pem
+
+# база данных PostgreSQL
+psql
+```
+
+## Оптимизация веб-сервера NGINX
+
+```bash
+# редактируем файл конфигурации NGINX
+sudo nano /etc/nginx/nginx.conf
+# устанавливаем следующие значения
+worker_connections 4000;
+
+##
+# `gzip` Settings
+##
+
+gzip on;
+gzip_disable "msie6";
+
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 6;
+gzip_buffers 16 8k;
+gzip_http_version 1.1;
+gzip_min_length 256;
+gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/vnd.ms-fontobject application/x-font-ttf font/opentype image/svg+xml image/x-icon;
+
+# для смены worker_rlimit_nofile можно выполнить системную команду
+ulimit -n 200000
+# или изменить файл /etc/security/limits.conf
+```
+
+## Контроль версий Git, сервис GitHub и среда разработки
 
 Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py
 
