@@ -439,6 +439,10 @@ uwsgi --http :8000 --module djproject.wsgi
 ```bash
 mkdir media
 mkdir static
+sudo chmod -R 755 media/
+sudo chmod -R 755 static/
+sudo chown -R djangouser:djangouser media/
+sudo chown -R djangouser:djangouser static/
 cd media 
 wget  https://i.redd.it/jsnlg9kwvtxx.jpg
 mv jsnlg9kwvtxx.jpg media.jpg
@@ -785,7 +789,11 @@ server {
 	      server_name lnovus.online;
 	      client_max_body_size 75M;
 	
-				location = /favicon.ico { access_log off; log_not_found off; }
+				# путь к favicon.ico
+        location = /favicon.ico {
+                alias /home/djangouser/.virtualenvs/djangoenv/djproject/favicon.ico;
+        }
+
 	      
 		    location /static {
 								autoindex on;
