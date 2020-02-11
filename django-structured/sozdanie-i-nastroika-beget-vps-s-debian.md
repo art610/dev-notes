@@ -243,11 +243,6 @@ ufw default deny incoming
 ufw default allow outgoing
 ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 8000/tcp && ufw allow 443/tcp
 
-# сразу настроим глобальные параметры git
-sudo git config --global user.name "ProductionServer01"
-sudo git config --global user.email "mail@mail.com"
-sudo git config --global core.pager "less -r"
-
 # добавим репозиторий с последней версией NodeJS - 12 на текущий момент
 # для установки других версий заменяем значение 12.x на необходимое
 sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
@@ -1212,11 +1207,13 @@ ulimit -n 200000
 cd /home/djangouser/.virtualenvs/djangoenv/djproject/
 git init
 
-# создаем .gitignore и добавляем туда всё, что нам не понадобится
+# создаем .gitignore
 sudo nano .gitignore 
+```
 
-# добавляем в .gitignore следующее
+Добавляем в .gitignore следующее:
 
+```bash
 ### Django ###
 *.log
 *.pyc
@@ -1264,5 +1261,33 @@ docs/_build/
 # Thumbnails
 ._*
 favicon.ico
+```
+
+Остальное добавляем на отслеживание и отправляем в удаленный репозиторий:
+
+```bash
+git add .
+
+# проверим, какие файлы и папки мы теперь отслеживаем
+git status
+
+# при необходимости удаляем папки и файлы из индекса
+# без удаления самого файла --cached
+git rm --cached <filename>
+git rm -r --cached <foldername>
+
+# настроим глобальные параметры git
+git config --global user.name "StageServer01"
+git config --global user.email "ikelart@yandex.ru"
+git config --global core.pager "less -r"
+
+# делаем инициализирующий коммит
+git commit -m "Initial commit"
+
+# подключаем удаленный репозиторий
+git remote add origin <ssh-link>
+
+# отправляем файлы в удаленный репозиторий
+git push -f origin master
 ```
 
