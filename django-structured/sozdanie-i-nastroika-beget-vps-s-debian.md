@@ -294,7 +294,7 @@ cd ~
 
 # Подключаем сервер к GitHub
 # генерируем SSH ключ
-yes ~/.ssh/id_rsa | ssh-keygen -q -t rsa -b 4096 -C "ikelart@yandex.ru" -N '' > /dev/null
+yes ~/.ssh/id_rsa | ssh-keygen -q -t rsa -b 4096 -C "admin@alistorya.com" -N '' > /dev/null
 # добавляем ключи к пользователю
 ssh-agent
 eval "$(ssh-agent -s)"
@@ -503,7 +503,7 @@ upstream djproject {
 server {
   listen 80;
   listen [::]:80;
-	server_name     lnovus.online;
+	server_name     45.84.225.101;
 	charset     utf-8;
 	client_max_body_size 75M;
 	location /media  {
@@ -689,7 +689,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'djprojectdb',
         'USER': 'djprojectdbusr',
-        'PASSWORD': 'OQ*EbaAA04MBU%bp',
+        'PASSWORD': '******************',
         'HOST': 'localhost',
         'PORT': '',
     }
@@ -723,7 +723,7 @@ systemctl restart djproject.uwsgi.service
 Запускаем Certbot с данными эл. почты и домена \(потребуется добавить к DNS домена запись TXT с указанным кодом acme, подождать 15 минут и отправить на одобрение запрос\):
 
 ```bash
-certbot certonly --preferred-challenges=dns --agree-tos -m ikelart@yandex.ru -d *.lnovus.online -d lnovus.online --manual --server https://acme-v02.api.letsencrypt.org/directory
+certbot certonly --preferred-challenges=dns --agree-tos -m admin@alistorya.com -d *.alistorya.com -d alistorya.com --manual --server https://acme-v02.api.letsencrypt.org/directory
 ```
 
 Выводим данные о сертификате и ключе \(необходимо получить путь к файлам\):
@@ -732,11 +732,14 @@ certbot certonly --preferred-challenges=dns --agree-tos -m ikelart@yandex.ru -d 
 echo -e "\033[32m $(certbot certificates) \033[0m"
 ```
 
-Полученный путь будет выглядеть следующим образом:
+Полученные данные:
 
 ```bash
-Certificate Path: /etc/letsencrypt/live/<SERVER_DOMEN>/fullchain.pem
-Private Key Path: /etc/letsencrypt/live/<SERVER_DOMEN>/privkey.pem
+Certificate Name: alistorya.com
+    Domains: *.alistorya.com alistorya.com
+    Expiry Date: 2020-05-12 11:41:34+00:00 (VALID: 89 days)
+    Certificate Path: /etc/letsencrypt/live/alistorya.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/alistorya.com/privkey.pem
 ```
 
 Теперь необходимо правильно настроить конфигурацию nginx и перезапустить службы: Обновим зависимости и отредактируем файл конфигурации NGINX:
@@ -805,7 +808,6 @@ server {
 	      	      include     /etc/nginx/uwsgi_params;
 	      }
 }
-
 ```
 
 Перезагрузка и проверка конфигурации:
@@ -814,23 +816,16 @@ server {
 nginx -t
 sudo /etc/init.d/nginx restart
 systemctl restart djproject.uwsgi.service
+# при необходимости добавим домен в ALLOWED_HOSTS
 ```
 
-Закрываем 80 \(это запретит переход по IP адресу сервера\) и 8000 порт при помощи ufw:
+Закрываем 8000 порт при помощи ufw:
 
 ```bash
-ufw deny 80/tcp && ufw deny 8000/tcp
+ufw deny 8000/tcp
 ```
 
-Теперь сайт можно открыть только если указать домен. Соответственно остается доступ на портах 22 для ssh подключения и 443 для https.
-
-Устанавливаем по умолчанию конфигурацию из файла production.py:
-
-```bash
-sudo nano /home/djangouser/.virtualenvs/djangoenv/djproject/djproject/settings/production.py
-```
-
-### 
+Теперь сайт можно открыть только если указать домен. Соответственно остается доступ на портах 22 для ssh подключения и 443 для https \(с 80 порта происходит перенаправление на https\).
 
 ### Разделение Dev и Production конфигураций Django
 
