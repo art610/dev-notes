@@ -890,7 +890,7 @@ except ImportError:
 from .base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ["SECRET_KEY_VALUE"]
+SECRET_KEY = os.environ['SECRET_KEY_VALUE']
 # отключаем режим отладки
 DEBUG = False
 # указываем только основные хосты 
@@ -902,7 +902,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'djprojectdb',
         'USER': 'djprojectdbusr',
-        'PASSWORD': 'OQ*EbaAA04MBU%bp',
+        'PASSWORD': '**********',
         'HOST': 'localhost',
         'PORT': '',
     }
@@ -1089,13 +1089,21 @@ urlpatterns = [
 
 Для того, чтобы не выдавать секретный ключ при удаленном хранении кода, его необходимо поместить в переменную системного фонового процесса, и делать вызов непосредственно от туда.
 
+{% hint style="danger" %}
+Если SECRET\_KEY содержит символ %, то его стоит экранировать повтором % \(получится так %%\). Одинарные кавычки также экранируют другие служебные символы bash.
+{% endhint %}
+
 ```bash
 # в settings/production.py пропишем вызов переменной окружения
 SECRET_KEY = os.environ["SECRET_KEY_VALUE"]
 
 # заходим под пользователем <DJANGO_USER> и устанавливаем для него системную переменную окружения
 su - djangouser
-export SECRET_KEY_VALUE='ifqy==gk35kn#piau4xwxru5(68afbk#7fxr2urj_#ezw1s04y'
+export SECRET_KEY_VALUE='*******************************************'
+# добавим его также в .bashrc
+sudo nano ~/.bashrc
+# в конец файла добавляем следующую строку
+export SECRET_KEY_VALUE='*******************************************'
 # обращаем внимание на одинарные кавычки (они экранируют служебные символы Bash)
 # выходим за root
 exit
@@ -1236,7 +1244,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Translations
-*.mo
+*.mo 
 *.pot
 
 # PyBuilder
@@ -1256,9 +1264,23 @@ docs/_build/
 # Thumbnails
 ._*
 favicon.ico
+
+# IDE
+.idea/
 ```
 
-Остальное добавляем на отслеживание и отправляем в удаленный репозиторий:
+Устанавливаем глобальные параметры Git:
+
+```bash
+# настроим глобальные параметры git
+git config --global user.name "ProductionServer01"
+git config --global user.email "admin@alistorya.com"
+git config --global core.pager "less -r"
+```
+
+### Добавление в новый репозиторий
+
+Если мы хотим добавить проект в чистый репозиторий, который только что создали, то выполняем следующее:
 
 ```bash
 git add .
@@ -1271,11 +1293,6 @@ git status
 git rm --cached <filename>
 git rm -r --cached <foldername>
 
-# настроим глобальные параметры git
-git config --global user.name "StageServer01"
-git config --global user.email "ikelart@yandex.ru"
-git config --global core.pager "less -r"
-
 # делаем инициализирующий коммит
 git commit -m "Initial commit"
 
@@ -1285,6 +1302,49 @@ git remote add origin <ssh-link>
 # отправляем файлы в удаленный репозиторий
 git push -f origin master
 ```
+
+### Получаем данные из удаленного репозитория
+
+Если в удаленном репозитории содержатся файлы проекта Django, с которыми мы работали ранее, то нам необходимо их получить и выполнить слияние с файлами на сервере. Для этого выполняем следующее:
+
+```bash
+# переходим в основную папку проекта и инициализируем репозиторий
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/
+# подключаем удаленный репозиторий
+git remote add origin <ssh-link>
+# получаем все изменения
+git fetch --all
+# проводим сброс
+git reset --hard origin/master
+# если находимся на другой ветке
+git reset --hard origin/<branch_name>
+# применяем последние изменения
+git pull origin master
+```
+
+Команда `git fetch` получает последние файлы с удаленного репозитория без замены и слияния локальных файлов, а затем мы сбрасываем ветку до той, которую получили из удаленного репозитория, причем опция --hard заменит все файлы в рабочей ветке, которые совпадут с файлами из удаленного репозитория \(подобно --force\). 
+
+Далее можно выполнить соответствующие команды в окружении Django:
+
+```bash
+# вход за djangouser
+su - djangouser
+# активируем виртуальное окружение и переходим в директорию проекта
+workon djangoenv
+cdvirtualenv
+cd djproject
+
+# выполняем необходимые операции
+python manage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic
+python manage.py createsuperuser
+
+# перезапускаем веб-сервера с прокси
+systemctl restart djproject.uwsgi.service && sudo /etc/init.d/nginx restart
+```
+
+### 
 
 ### Автоматический pull на stage сервер с master
 
