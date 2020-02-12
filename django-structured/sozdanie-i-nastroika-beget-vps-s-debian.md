@@ -1340,11 +1340,43 @@ python manage.py migrate
 python manage.py collectstatic
 python manage.py createsuperuser
 
-# перезапускаем веб-сервера с прокси
-systemctl restart djproject.uwsgi.service && sudo /etc/init.d/nginx restart
+# перезапускаем все службы
+sudo systemctl daemon-reload && sudo /etc/init.d/nginx restart && systemctl restart djproject.uwsgi.service
 ```
 
-### 
+### Настройка контроля версий
+
+Для контроля версий используем связку Git-GitHub и три ветки, помимо master, а именно:
+
+* **dev** - в данной ветке ведем разработку \(пока работаем одни и приложение имеет небольшие размеры, а в будущем можно её поделить на ветки featrure, bugfix/hotfix и т.п.\). Данную ветку сливаем в master;
+* **master** - основная ветка при разработке - если есть несколько разработчиков, то изменения они сливают в master, где далее проводят тесты и прочие операции, чтобы отправить код на ветку stage;
+* **stage** - ветка для pre-production тестирования и отладки, которая выкатывается на промежуточный сервер и после выполнения всех необходимых операций сливается в production;
+* **production** - ветка для выкладки на основной сервер, которому имеют доступ пользователи. 
+
+```bash
+# просмотреть данные git
+git status    # состояние проекта
+git log    # журналы проекта
+
+# работа с ветками репозитория
+git branch -a    # показать все ветки репозитория
+git branch stage    # создать новую ветку с названием new_feature
+git branch    # текущая ветка
+
+git checkout new_feature    # перейти на созданную ветку
+git checkout master    # перейти на основную ветку проекта
+git merge new_feature    # произвести слияние ветки new_feature с основной
+
+# стандартные операции
+# добавим все файлы проекта в локальный репозиторий
+sudo git add . 
+# сделаем коммит в локальный репозиторий
+sudo git commit -m 'message'
+# запушим изменения в удаленный репозиторий
+sudo git push -u origin master 
+# получим обновления из удаленного репозитория
+sudo git pull origin 
+```
 
 ### Автоматический pull на stage сервер с master
 
