@@ -1291,3 +1291,32 @@ git remote add origin <ssh-link>
 git push -f origin master
 ```
 
+### Автоматический pull на stage сервер с master
+
+Установить [Go Lang Env](https://golang.org/doc/install) для сборки из исходников Gitomatic \([git-o-matic](https://github.com/muesli/gitomatic/blob/master/README.md)\). Получить пакеты и собрать данную утилиту.
+
+```bash
+# устанавливаем go
+cd /opt 
+wget https://dl.google.com/go/go1.13.7.linux-amd64.tar.gz
+tar -xvf go1.13.7.linux-amd64.tar.gz
+sudo mv go /usr/local
+# установим переменные окружения Go для текущей сессии
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/Projects/goprojects
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+# проверяем установку
+go version
+go env
+
+# обновляем зависимости
+sudo apt-get -y update && apt-get -y dist-upgrade
+
+# устанавливаем gitomatic
+git clone https://github.com/muesli/gitomatic.git
+cd gitomatic
+go build
+```
+
+
+
