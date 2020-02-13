@@ -1378,6 +1378,8 @@ sudo git push -u origin master
 sudo git pull origin 
 ```
 
+Теперь мы можем работать в ветке dev и при окончании сливать её в master, где можно проводить дополнительные операции, либо сливать туда параллельно другие ветки из разработки и тестирования для разрешения конфликтов, а затем её сливать в stage при помощи GitHub PullRequest, а после отладки на stage сервере и разрешения конфликтов можно выкатывать изменения на ветку production также при помощи GitHub PullRequest.
+
 ### Автоматический pull на stage сервер с master
 
 Установить [Go Lang Env](https://golang.org/doc/install) для сборки из исходников Gitomatic \([git-o-matic](https://github.com/muesli/gitomatic/blob/master/README.md)\). Получить пакеты и собрать данную утилиту.
