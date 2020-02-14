@@ -5,9 +5,10 @@
 ```text
 # открываем файл редактором nano для добавления параметра
 sudo nano /etc/cloud/cloud.cfg
-# добавим в конец файла параметр apt_preserve_sources_list: true в файле и сохраним изменения
+# добавим в конец файла параметр apt_preserve_sources_list: true 
 
-# редактируем файл sources.list (добавляем contrib non-free для каждого репозитория)
+# редактируем файл sources.list
+# добавляем contrib non-free для каждого репозитория
 sudo nano /etc/apt/sources.list
 # сохраняем изменения: Ctrl+X затем Y и Enter
 ```
