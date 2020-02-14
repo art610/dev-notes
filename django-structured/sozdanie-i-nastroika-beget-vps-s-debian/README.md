@@ -1201,6 +1201,20 @@ ulimit -n 200000
 # или изменить файл /etc/security/limits.conf
 ```
 
+## Настройки безопасности Django для production
+
+```bash
+# параметры безопасности production экземпляра
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_REFERRER_POLICY = 'same-origin'
+```
+
 ## Контроль версий Git, сервис GitHub и среда разработки
 
 Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py и файл unix-сокета. 
