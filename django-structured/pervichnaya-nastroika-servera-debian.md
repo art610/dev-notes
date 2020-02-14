@@ -29,20 +29,57 @@ deb-src http://deb.debian.org/debian buster-backports main contrib non-free
 Далее выполняем ряд команд для установки необходимого окружения:
 
 ```bash
-# повышаем права до root и переходим в домашнюю директорию root-пользователя
+# повышаем права до root 
+# и переходим в домашнюю директорию root-пользователя
 sudo su
 cd ~
 # обновляем зависимости и пакеты
 apt-get -y update && apt-get -y dist-upgrade
 # устанавливаем необходимые пакеты одной командной
-sudo apt-get -y install libtiff5-dev libjpeg62-turbo-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev gcc g++ libc-dev curl man libffi-dev libssl-dev libbz2-dev libncursesw5-dev libgdbm-dev liblzma-dev libsqlite3-dev tk-dev uuid-dev libreadline-dev build-essential libncurses5-dev libnss3-dev wget ufw nginx git 
+# слеш \ определяет перенос строки
+# копировать команду нужно со строкой после \
+sudo apt-get -y install libtiff5-dev \
+libjpeg62-turbo-dev \
+zlib1g-dev \
+libfreetype6-dev \
+liblcms2-dev \
+libwebp-dev \
+tcl8.6-dev \
+tk8.6-dev \
+gcc \
+g++ \
+libc-dev \
+curl \
+man \
+libffi-dev \
+libssl-dev \
+libbz2-dev \
+libncursesw5-dev \
+libgdbm-dev \
+liblzma-dev \
+libsqlite3-dev \
+tk-dev \
+uuid-dev \
+libreadline-dev \
+build-essential \
+libncurses5-dev \
+libnss3-dev \
+wget \
+ufw \
+nginx \
+git 
+
 # обновляем зависимости и пакеты
 apt-get -y update && apt-get -y dist-upgrade
 
 # настраиваем firewall утилитой ufw
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 8000/tcp && ufw allow 443/tcp
+ufw default deny incoming && \
+ufw default allow outgoing && \
+ufw allow ssh && \
+ufw allow 22/tcp && \
+ufw allow 80/tcp && \
+ufw allow 8000/tcp && \
+ufw allow 443/tcp
 
 # добавим репозиторий с последней версией NodeJS - 12 на текущий момент
 # для установки других версий заменяем значение 12.x на необходимое
@@ -56,7 +93,8 @@ apt-get -y update && apt-get -y dist-upgrade
 nodejs -v && node -v && npm -v
 
 # установим python 3.8.1
-# скачиваем исходник XZ с официального сайта (можно взять ссылку на любую версию)
+# скачиваем исходник XZ с официального сайта 
+# можно взять ссылку на любую версию
 cd /opt
 curl -O https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz
 # разархивируем исходники
@@ -64,12 +102,16 @@ tar -xf Python-3.8.1.tar.xz
 # сконфигурируем и проверим исходники для сборки, создаем MAKEFILE
 cd Python-3.8.1
 ./configure --enable-optimizations
-# запустим сборку из исходников (нужно будет подождать окончания сборки ~15 мин)
+# запустим сборку из исходников 
+# нужно будет подождать окончания сборки ~15 мин
 make
 # компилируем и устанавливаем
 make altinstall 
-# выставляем приоритет запуска версий (чем выше последняя цифра - выше приоритет)
-update-alternatives --install /usr/bin/python python /usr/local/bin/python3.8 2
+# выставляем приоритет запуска версий
+# чем выше последняя цифра - выше приоритет
+update-alternatives --install /usr/bin/python python \
+ /usr/local/bin/python3.8 2
+ 
 # обновляем зависимости
 apt-get -y update && apt-get -y dist-upgrade
 # устанавливаем дополнительные пакеты pip
