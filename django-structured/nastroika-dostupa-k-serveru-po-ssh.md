@@ -46,7 +46,7 @@
 # создаем системного пользователя Debian
 # <username> заменяем на любое имя пользователя, например, user
 # в ходе диалога указываем пароль и учетные данные
-# затем подтверждаем создание нового пользователя, нажав клавишу Y и Enter
+# подтверждаем создание нового пользователя, нажав клавишу Y и Enter
 sudo adduser <username>
 
 # добавляем пользователя в группу sudo
@@ -56,7 +56,7 @@ sudo usermod -aG sudo <username>
 id <username>
 # перезаходим за созданного пользователя
 su - <username>
-# повышаем привелегии пользователя до root (возможно, придется ввести пароль)
+# повышаем привелегии пользователя до root
 sudo su
 # выходим из-под root
 exit
@@ -116,6 +116,8 @@ sudo nano ~/.ssh/authorized_keys
 
 Далее сохраняем изменения посредством нажатия комбинации клавиш "Ctr+X" и далее клавиши Y \(не забываем указать английскую раскладку клавиатуры\) и Enter. В итоге мы добавили новый SSH ключ на удаленный сервер. 
 
+
+
 Устанавливаем требуемые права на директорию `/home/<username>/.ssh` посредством следующих команд:
 
 ```text
@@ -148,10 +150,10 @@ sudo nano /etc/ssh/sshd_config
     PubkeyAuthentication yes    # аутентификация по публичному ключу SSH
     # использование списка ключей из authorized_keys
     AuthorizedKeysFile      .ssh/authorized_keys .ssh/authorized_keys2
-    HostbasedAuthentication no    # доступ с определенного хоста без пароля
+    HostbasedAuthentication no    # доступ с хоста без пароля
     PasswordAuthentication no    # аутентификация по паролям
     PermitEmptyPasswords no    # допустимость пустых паролей
-    UsePAM yes    # использование API Pluggable Authentication Modules для доступа
+    UsePAM yes    # использование API Pluggable Authentication Modules
     # в конце файла удалить повтор PasswordAuthentication yes
 
 # выходим из файла Ctrl+X с сохранением - Y + Enter
@@ -165,7 +167,7 @@ sudo service sshd restart
 
 ```text
 sudo killall -u <username>    # завершить все процессы пользователя
-userdel -r <username>    # удалить учетную запись пользователя и его каталог
+userdel -r <username>    # удалить учетную запись пользователя
 ```
 
 Для дополнительной защиты от брутфорса можно воспользоваться утилитой fail2ban. Дополнительно настроить порты и т.п. Более подробно про повышение безопасности сервера при доступе к нему по SSH можно прочитать, например, по ссылке: [https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html](https://www.ibm.com/developerworks/ru/library/au-sshlocks/index.html)
