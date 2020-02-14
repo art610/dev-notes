@@ -88,8 +88,6 @@ deactivate
 exit    # [root]
 ```
 
-### 
-
 ### Устанавливаем и настраиваем связку uWSGI/NGINX
 
 ```bash
