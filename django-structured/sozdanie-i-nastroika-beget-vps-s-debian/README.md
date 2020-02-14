@@ -1205,6 +1205,7 @@ ulimit -n 200000
 
 ```bash
 # параметры безопасности production экземпляра
+# необходимо добавить в <project_dir>/settings/production.py
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
