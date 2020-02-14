@@ -1,19 +1,19 @@
 # Контроль версий Git и веб-сервис GitHub
 
-Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py и файл unix-сокета. 
+Все файлы конфигурации \(nginx/uwsgi\) необходимо занести в .gitignore, также как и настройки production.py. 
 
-Берем из основной папки файл **manage.py** и папки со статикой и медиа **static/** **media/**, из папки с настройками проекта файлы **settings.py**, **urls.py** и **wsgi.py**. При создании приложений также берем основные файлы из них \(models.py, urls.py, views.py и подобные\).
+Берем из основной папки файл **manage.py** и папки со статикой **static/**, из папки с настройками проекта файлы **settings/base.py**, **settings/dev.py**, **urls.py** и **wsgi.py** - добавляем на отслеживание. При создании приложений также берем основные файлы из них \(models.py, urls.py, views.py и подобные\).
 
 ```bash
 # переходим в основную папку проекта и инициализируем репозиторий
 cd /home/djangouser/.virtualenvs/djangoenv/djproject/
 git init
 
-# создаем .gitignore
+# создаем файл .gitignore
 sudo nano .gitignore 
 ```
 
-Добавляем в .gitignore следующее:
+Добавляем в файл **.gitignore** следующее:
 
 ```bash
 ### Django ###
@@ -33,8 +33,6 @@ media/**
 *.so
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -68,29 +66,34 @@ favicon.ico
 .idea/
 ```
 
-Устанавливаем глобальные параметры Git:
+Устанавливаем глобальные параметры Git - при необходимости указать своим параметры, вместо "ProductionServer01" и "admin@domain.com":
 
 ```bash
 # настроим глобальные параметры git
 git config --global user.name "ProductionServer01"
-git config --global user.email "admin@alistorya.com"
+git config --global user.email "admin@domain.com"
 git config --global core.pager "less -r"
 ```
 
-### Добавление в новый репозиторий
+### Работа с веб-сервисом GitHub
 
-Если мы хотим добавить проект в чистый репозиторий, который только что создали, то выполняем следующее:
+
+
+### Добавление проекта в новый репозиторий
+
+Если мы хотим добавить проект в чистый репозиторий, который только что создали на GitHub, то выполняем следующее:
 
 ```bash
+# добавить файлы на отслеживание
 git add .
+
+# при необходимости удаляем папки и файлы из системы отслеживания
+# без удаления самого файла локально --cached
+git rm --cached <filename>
+git rm -r --cached <foldername>
 
 # проверим, какие файлы и папки мы теперь отслеживаем
 git status
-
-# при необходимости удаляем папки и файлы из индекса
-# без удаления самого файла --cached
-git rm --cached <filename>
-git rm -r --cached <foldername>
 
 # делаем инициализирующий коммит
 git commit -m "Initial commit"
@@ -102,7 +105,11 @@ git remote add origin <ssh-link>
 git push -f origin master
 ```
 
-### Получаем данные из удаленного репозитория
+{% hint style="info" %}
+Заменяем &lt;ssh-link&gt; на ссылку SSH, полученную для соответствующего репозитория на GitHub
+{% endhint %}
+
+### Получаем данные проекта из удаленного репозитория
 
 Если в удаленном репозитории содержатся файлы проекта Django, с которыми мы работали ранее, то нам необходимо их получить и выполнить слияние с файлами на сервере. Для этого выполняем следующее:
 
@@ -140,17 +147,19 @@ python manage.py collectstatic
 python manage.py createsuperuser
 
 # перезапускаем все службы
-sudo systemctl daemon-reload && sudo /etc/init.d/nginx restart && systemctl restart djproject.uwsgi.service
+sudo systemctl daemon-reload
+sudo /etc/init.d/nginx restart 
+systemctl restart djproject.uwsgi.service
 ```
 
 ### Настройка контроля версий
 
 Для контроля версий используем связку Git-GitHub и три ветки, помимо master, а именно:
 
-* **dev** - в данной ветке ведем разработку \(пока работаем одни и приложение имеет небольшие размеры, а в будущем можно её поделить на ветки featrure, bugfix/hotfix и т.п.\). Данную ветку сливаем в master;
+* **dev** - в данной ветке ведем разработку \(пока работаем одни и приложение имеет небольшие размеры, а в будущем можно её поделить на ветки featrure, bugfix/hotfix с номерами соответствующих задач issues и т.п.\). Данную ветку сливаем в master;
 * **master** - основная ветка при разработке - если есть несколько разработчиков, то изменения они сливают в master, где далее проводят тесты и прочие операции, чтобы отправить код на ветку stage;
 * **stage** - ветка для pre-production тестирования и отладки, которая выкатывается на промежуточный сервер и после выполнения всех необходимых операций сливается в production;
-* **production** - ветка для выкладки на основной сервер, которому имеют доступ пользователи. 
+* **production** - ветка для выкладки на основной сервер, к которому имеют доступ пользователи. 
 
 ```bash
 # просмотреть данные git
@@ -164,7 +173,7 @@ git branch    # текущая ветка
 
 git checkout new_feature    # перейти на созданную ветку
 git checkout master    # перейти на основную ветку проекта
-git merge new_feature    # произвести слияние ветки new_feature с основной
+git merge new_feature    # произвести слияние ветки new_feature с master
 
 # стандартные операции
 # добавим все файлы проекта в локальный репозиторий
