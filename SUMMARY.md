@@ -19,4 +19,8 @@
 * [Создание Beget VPS](django-structured/sozdanie-beget-vps.md)
 * [Настройка доступа к серверу по SSH](django-structured/nastroika-dostupa-k-serveru-po-ssh.md)
 * [Первичная настройка сервера Debian](django-structured/pervichnaya-nastroika-servera-debian.md)
+* [Установка Django](django-structured/ustanovka-django.md)
+* [Установка и подключение базы данных PostgreSQL](django-structured/ustanovka-i-podklyuchenie-bazy-dannykh-postgresql.md)
+* [Выпуск SSL сертификата для домена](django-structured/vypusk-ssl-sertifikata-dlya-domena.md)
+* [Разделение Dev и Production конфигураций Django](django-structured/razdelenie-dev-i-production-konfiguracii-django.md)
 

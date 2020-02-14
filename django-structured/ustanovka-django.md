@@ -1,0 +1,332 @@
+# Установка Django
+
+
+
+Среда на production сервере будет представлена следующим образом:
+
+![Django on Production Server](../.gitbook/assets/1562449042114.png)
+
+То есть запрос от клиента будет поступать на HTTP Reverse Proxy Web-Server NGINX, затем через Unix-сокет запрос передается на uWSGI и далее по протоколу WSGI запрос клиента поступает фреймворку Django \(то есть к роутеру и дальше направляется на соответствующую сущность\).
+
+Создадим пользователя для работы с Django и соответствующим окружением:
+
+```bash
+# создаем системного пользователя <DJANGO_USER>, указываем любое имя пользователя, например, djangouser
+# в ходе диалога указываем пароль, учетные данные оставим пустыми
+# затем подтверждаем создание нового пользователя, нажав клавишу Y и Enter
+sudo adduser djangouser
+
+# добавляем пользователя в группу sudo и www-data
+sudo usermod -aG sudo djangouser
+sudo usermod -aG www-data djangouser
+
+# проверим наличие созданного пользователя
+id djangouser
+```
+
+Заходим под новым пользователем и настраиваем окружение:
+
+```bash
+# заходим за пользователя djangouser
+su - djangouser
+# создаем виртуальную среду Python при помощи оболочки virtualenvwrapper
+# пропишем path для нового пользователя
+which virtualenvwrapper.sh
+source /usr/local/bin/virtualenvwrapper.sh
+# создадим директорию projects
+sudo mkdir ~/projects
+# откроем файл .bashrc в редакторе nano
+sudo nano ~/.bashrc
+# добавим в конец файла .bashrc следующие записи
+export PROJECT_HOME=$HOME/projects      # optional
+source /usr/local/bin/virtualenvwrapper.sh
+# перезайдем за пользователя djangouser
+exit
+su - djangouser
+
+```
+
+#### 
+
+### Создаем виртуальное окружение и устанавливаем Django
+
+Команда `django-admin startproject <PROJECT_NAME>` создаст одноименный каталог и пакет проекта в каталоге, в котором она была запущена. Параметр `<destination>` позволяет задать целевой каталог, если команда запускается в другом каталоге.
+
+```bash
+# создаем виртуальное окружение проекта
+mkvirtualenv djangoenv
+# переходим в каталог /home/djangouser/.virtualenvs/djangoenv
+cdvirtualenv
+# устанавливаем django
+pip install django
+# выйдем из виртуалньой среды и из-под root также установим django глобально
+deactivate
+exit
+pip install django
+# вернемся в виртуальное окружение
+su - djangouser
+workon djangoenv
+cdvirtualenv
+# запросим версию django
+django-admin --version
+# создаем проект Django
+django-admin startproject djproject
+# переходим в директорию проекта
+cd djproject
+# выполняем миграции (пока что SQLite)
+python manage.py migrate
+# добавляем SERVER_IP в ALLOWED_HOSTS 
+sudo nano djproject/settings.py
+# запускаем проект Django с указанием SERVER_IP
+python manage.py runserver <SERVER_IP>:8000
+# открываем в браузере <SERVER_IP>:8000 для проверки
+# если всё запустилось, то можно остановить Django на сервере Ctrl+C
+deactivate
+exit    # [root]
+```
+
+### Устанавливаем и настраиваем связку uWSGI/NGINX
+
+```bash
+# переходим в каталог проекта
+cd /home/djangouser/.virtualenvs/djangoenv/djproject
+# устанавливаем глобально uwsgi из-под root-пользователя
+pip install uwsgi	
+# создадим тестовый файл	
+sudo nano test.py		
+# в файл test.py добавляем следующее
+def application(env, start_response):
+	start_response('200 OK', [('Content-Type','text/html')])
+	return [b"Hello World"] 
+	
+# проверяем подключение uWSGI из-под root, проверяем в браузере доступ к <SERVER_IP>:8000 и затем выходим Ctrl+C
+uwsgi --http :8000 --wsgi-file /home/djangouser/.virtualenvs/djangoenv/djproject/test.py
+
+# запускаем созданный тестовый файл как веб-приложение через uWSGI из-под djangouser
+su - djangouser
+cd /home/djangouser/.virtualenvs/djangoenv/djproject/
+uwsgi --http :8000 --module djproject.wsgi
+```
+
+Для работы со статикой и медиа создаем папки static и media \(если нет в папке проекта\) и заносим для проверки в media изображение media.jpg:
+
+```bash
+mkdir media
+mkdir static
+sudo chmod -R 755 media/
+sudo chmod -R 755 static/
+sudo chown -R djangouser:djangouser media/
+sudo chown -R djangouser:djangouser static/
+cd media 
+wget  https://i.redd.it/jsnlg9kwvtxx.jpg
+mv jsnlg9kwvtxx.jpg media.jpg
+cd ..
+uwsgi --http :8000 --module djproject.wsgi
+# переходим по <server-ip>:8000/media/media.jpg и если видим картинку, то всё хорошо
+# если возникла ошибка, то нам нужно добавить MEDIA_ROOT
+sudo nano djproject/settings.py
+# добавляем только для development
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_URL = '/media/'
+# если возникает ошибка - открываем файл urls.py
+sudo nano djproject/urls.py
+# приводим его к след. виду
+from django.contrib import admin
+from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# теперь повторно запускаем и проверяем, что картинка открылась
+uwsgi --http :8000 --module djproject.wsgi
+# переходим по <server-ip>/media/media.jpg и если видим картинку, то всё хорошо
+# если проблемы с доступом к файлу, то изменим права
+sudo chmod 700 media
+
+# добавим процессинг медиа файлов в settings.py
+sudo nano djproject/settings.py
+# примерно так
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # ... the rest of your context_processors goes here ...
+                'django.template.context_processors.media',
+            ],
+         },
+    },
+]
+# Добавим параметр (если он отсутствует) STATIC_ROOT в конец файла settings.py
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# запускаем виртуальное окружение и переносим статику
+workon djangoenv
+cdvirtualenv
+cd djproject
+python manage.py collectstatic
+deactivate
+```
+
+Создаем файл конфигурации для NGINX, соответственно выполняем команду `sudo nano djproject_nginx.conf` и добавляем следующую конфигурацию:
+
+```bash
+upstream djproject {
+	server unix:///home/djangouser/.virtualenvs/djangoenv/djproject/djproject.sock;
+}
+server {
+  listen 80;
+  listen [::]:80;
+	server_name     45.84.225.101;
+	charset     utf-8;
+	client_max_body_size 75M;
+	location /media  {
+		alias /home/djangouser/.virtualenvs/djangoenv/djproject/media;
+	}
+	location /static {
+		alias /home/djangouser/.virtualenvs/djangoenv/djproject/static;
+	}
+	location / {
+		uwsgi_pass  djproject;
+		include     /etc/nginx/uwsgi_params;
+	}
+}
+```
+
+Создаем симлинк для активации конфига и перезапускаем nginx:
+
+```bash
+sudo ln -s /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_nginx.conf /etc/nginx/sites-enabled/
+sudo /etc/init.d/nginx restart
+```
+
+Проверим работу веб-сервера:
+
+```bash
+uwsgi --socket djproject.sock --wsgi-file test.py --chmod-socket=666
+uwsgi --socket djproject.sock --module djproject.wsgi --chmod-socket=666
+```
+
+Создаем конфигурационный файл для uwsgi `sudo nano djproject_uwsgi.ini` и заносим в него следующее:
+
+```bash
+[uwsgi]
+project = djproject
+venv = djangoenv
+usr = djangouser
+
+# Корневая папка проекта (полный путь)
+chdir = /home/%(usr)/.virtualenvs/%(venv)/%(project)/
+# Django wsgi файл
+module = %(project).wsgi:application
+# полный путь к виртуальному окружению
+home = /home/%(usr)/.virtualenvs/%(venv)
+wsgi-file = %(chdir)%(project)/wsgi.py
+plugins = python
+# общие настройки master
+master = true
+# максимальное количество процессов
+processes = 5
+# полный путь к файлу сокета
+socket = %(chdir)%(project).sock
+# права доступа к файлу сокета
+chmod-socket = 666
+# очищать окружение от служебных файлов uwsgi по завершению
+vacuum = true
+```
+
+Пробуем запустить uwsgi через файл с конфигурацией:
+
+```bash
+exit 		# [root]
+uwsgi --ini /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_uwsgi.ini --uid djangouser
+```
+
+При наличии ошибок стоит смотреть журнал в файл `/var/log/nginx/error.log`
+
+### Запускаем приложение в режиме Emperor
+
+Создаем папки для активации конфигов uwsgi из-под root-пользователя:
+
+```bash
+mkdir /etc/uwsgi/
+mkdir /etc/uwsgi/apps-available/
+mkdir /etc/uwsgi/apps-enabled/
+```
+
+Добавляем симлинк из нашего приложения `(djproject_uwsgi.ini)` в `/apps-enabled/` для активации данной конфигурации:
+
+```bash
+sudo ln -s /home/djangouser/.virtualenvs/djangoenv/djproject/djproject_uwsgi.ini /etc/uwsgi/apps-enabled/
+```
+
+Для запуска теперь используем параметр `--emperor`, в который передаем путь к файлам конфигурации всех наших приложений:
+
+```bash
+uwsgi --emperor /etc/uwsgi/apps-enabled --uid djangouser
+```
+
+Все конфигурации NGINX/uWSGI, с которыми мы работаем, теперь нужно активировать симлинком в соответствующие директории:
+
+NGINX -&gt; `/etc/nginx/sites-enabled/`   
+uWSGI -&gt; `/etc/uwsgi/apps-enabled/`
+
+Основные конфигурации для веб-приложения будут храниться в папке с проектом, а файл uwsgi-params в `/etc/nginx/uwsgi_params`
+
+### Создаем службу для системного запуска
+
+Установим системный демон для запуска, создаем файл и записываем туда:
+
+```bash
+sudo nano /etc/systemd/system/djproject.uwsgi.service
+```
+
+В данный файл добавляем следующее:
+
+```bash
+[Unit]
+Description=uWSGI Emperor Service
+After=syslog.target
+
+[Service]
+ExecStart=/usr/local/bin/uwsgi --emperor /etc/uwsgi/apps-enabled --uid djangouser 
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+Restart=always
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Теперь мы можем запускать uwsgi и соответствующие проекты в режиме Emperor как системную службу \(запуск производим от root\):
+
+Запускаем и включаем uWSGI при загрузке:
+
+```bash
+systemctl enable djproject.uwsgi.service
+systemctl start djproject.uwsgi.service
+```
+
+Запускаем и включаем Nginx при загрузке:
+
+```bash
+systemctl enable nginx
+systemctl start nginx
+```
+
+Перезагрузка и проверка конфигурации:
+
+```bash
+nginx -t
+sudo /etc/init.d/nginx restart
+systemctl restart djproject.uwsgi.service
+```
+
