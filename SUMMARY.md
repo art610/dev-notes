@@ -22,7 +22,7 @@
 * [Установка Django](django-structured/ustanovka-django.md)
 * [Установка и подключение базы данных PostgreSQL](django-structured/ustanovka-i-podklyuchenie-bazy-dannykh-postgresql.md)
 * [Выпуск SSL сертификата для домена](django-structured/vypusk-ssl-sertifikata-dlya-domena.md)
-* [Разделение Dev и Production конфигураций Django](django-structured/razdelenie-dev-i-production-konfiguracii-django.md)
+* [Разделение файла конфигурации Django](django-structured/razdelenie-dev-i-production-konfiguracii-django.md)
 * [Перенос SECRET\_KEY отдельно от Django](django-structured/perenos-secret_key-otdelno-ot-django.md)
 * [Служебные команды Django и окружения](django-structured/sluzhebnye-komandy-django-i-okruzheniya.md)
 * [Оптимизация веб-сервера NGINX](django-structured/optimizaciya-veb-servera-nginx.md)
