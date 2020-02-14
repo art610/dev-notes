@@ -26,5 +26,5 @@
 * [Перенос SECRET\_KEY](django-structured/perenos-secret_key-otdelno-ot-django.md)
 * [Проверка Django и администрирование](django-structured/sluzhebnye-komandy-django-i-okruzheniya.md)
 * [Оптимизация веб-сервера NGINX](django-structured/optimizaciya-veb-servera-nginx.md)
-* [Контроль версий Git, сервис GitHub и среда разработки](django-structured/kontrol-versii-git-servis-github-i-sreda-razrabotki.md)
+* [Контроль версий Git и веб-сервис GitHub](django-structured/kontrol-versii-git-servis-github-i-sreda-razrabotki.md)
 
