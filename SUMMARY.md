@@ -24,7 +24,7 @@
 * [Выпуск SSL сертификата для домена](django-structured/vypusk-ssl-sertifikata-dlya-domena.md)
 * [Разделение файла конфигурации Django](django-structured/razdelenie-dev-i-production-konfiguracii-django.md)
 * [Перенос SECRET\_KEY](django-structured/perenos-secret_key-otdelno-ot-django.md)
-* [Служебные команды Django и окружения](django-structured/sluzhebnye-komandy-django-i-okruzheniya.md)
+* [Проверка Django и администрирование](django-structured/sluzhebnye-komandy-django-i-okruzheniya.md)
 * [Оптимизация веб-сервера NGINX](django-structured/optimizaciya-veb-servera-nginx.md)
 * [Контроль версий Git, сервис GitHub и среда разработки](django-structured/kontrol-versii-git-servis-github-i-sreda-razrabotki.md)
 
