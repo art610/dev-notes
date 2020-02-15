@@ -27,4 +27,5 @@
   * [Контроль версий Git и веб-сервис GitHub](django-structured/kontrol-versii-git-servis-github-i-sreda-razrabotki.md)
   * [Оптимизация веб-сервера NGINX](django-structured/optimizaciya-veb-servera-nginx.md)
   * [Проверка Django и администрирование](django-structured/sluzhebnye-komandy-django-i-okruzheniya.md)
+* [Аутентификация Django](django-structured/autentifikaciya-django.md)
 
