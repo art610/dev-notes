@@ -109,5 +109,5 @@ sudo nano templates/base.html
 
 
 
-![](../.gitbook/assets/facebook-cover.png)
+![joxy image](autentifikaciya-django.assets/dde8330730.png)
 
