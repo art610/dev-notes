@@ -107,9 +107,9 @@ TEMPLATES = [
 sudo nano templates/base.html
 ```
 
+!\[Joxy Image\]\([https://lnovus.ru/content/images/2020/02/----1.png](https://lnovus.ru/content/images/2020/02/----1.png)\)
 
 
-![Joxy Image](../.gitbook/assets/image (20).png)
 
 > weqrcewrqcewr
 
