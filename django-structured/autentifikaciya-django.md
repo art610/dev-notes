@@ -109,5 +109,5 @@ sudo nano templates/base.html
 
 
 
-![joxy image](autentifikaciya-django.assets/dde8330730.png)
+ ![Joxy Image](autentifikaciya-django.assets/dde8330730-1582885072506.png) 
 
