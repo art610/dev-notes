@@ -14,10 +14,14 @@
 
 * [Бизнес-процессы и системный анализ](biznes-i-sistemnaya-arkhitektura/biznes-processy-i-sistemnyi-analiz.md)
 
+## VPS/VDS
+
+* [Создание и настройка Beget VPS](vps-vds/sozdanie-i-nastroika-beget-vps/README.md)
+  * [Создание Beget VPS](vps-vds/sozdanie-i-nastroika-beget-vps/sozdanie-beget-vps.md)
+
 ## Django Framework
 
 * [Создание и настройка Beget VPS с Debian](django-framework/sozdanie-i-nastroika-beget-vps-s-debian/README.md)
-  * [Создание Beget VPS](django-framework/sozdanie-i-nastroika-beget-vps-s-debian/sozdanie-beget-vps.md)
   * [Настройка SSH доступа к серверу](django-framework/sozdanie-i-nastroika-beget-vps-s-debian/nastroika-dostupa-k-serveru-po-ssh.md)
   * [Первичная настройка сервера Debian](django-framework/sozdanie-i-nastroika-beget-vps-s-debian/pervichnaya-nastroika-servera-debian.md)
   * [Установка Django](django-framework/sozdanie-i-nastroika-beget-vps-s-debian/ustanovka-django.md)
