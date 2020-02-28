@@ -10,5 +10,7 @@ explanation knowledge base 123
 
 ![](../../.gitbook/assets/background2.jpg)
 
-{% file src="../../.gitbook/assets/businesscardpackage.zip" %}
+
+
+Доступен файл вложения по закрытой [ссылке ](https://drive.google.com/file/d/1rE-WxjdOcB0kHDdjhoEQErdUZjk2ty7S/view?usp=sharing)
 
