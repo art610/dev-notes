@@ -97,7 +97,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-		        'django.template.context_processors.media',
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -109,5 +109,5 @@ sudo nano templates/base.html
 
 
 
- ![Joxy Image](autentifikaciya-django.assets/dde8330730-1582885072506.png) 
+![Joxy Image](../.gitbook/assets/dde8330730-1582885072506.png)
 
