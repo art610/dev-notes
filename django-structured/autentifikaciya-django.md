@@ -107,3 +107,7 @@ TEMPLATES = [
 sudo nano templates/base.html
 ```
 
+
+
+![](../.gitbook/assets/facebook-cover.png)
+
