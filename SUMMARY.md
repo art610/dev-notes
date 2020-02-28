@@ -14,11 +14,11 @@
 
 * [Бизнес-процессы и системный анализ](biznes-i-sistemnaya-arkhitektura/biznes-processy-i-sistemnyi-analiz.md)
 
-## VPS/VDS
+## Сервера и администрирование <a id="vps-vds"></a>
 
-* [Создание и настройка Beget VPS](vps-vds/sozdanie-i-nastroika-beget-vps/README.md)
-  * [SSH доступ](vps-vds/sozdanie-i-nastroika-beget-vps/ssh-dostup.md)
-  * [Создание Beget VPS](vps-vds/sozdanie-i-nastroika-beget-vps/sozdanie-beget-vps.md)
+* [Создание и настройка VPS/VDS](vps-vds/sozdanie-i-nastroika-vps/README.md)
+  * [Создание Beget VPS](vps-vds/sozdanie-i-nastroika-vps/sozdanie-beget-vps.md)
+  * [SSH доступ](vps-vds/sozdanie-i-nastroika-vps/ssh-dostup.md)
 
 ## Django Framework
 
