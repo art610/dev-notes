@@ -111,7 +111,9 @@ sudo nano templates/base.html
 
 ![Joxy Image](../.gitbook/assets/dde8330730-1582885072506.png)
 
-{% hint style="info" %}
-wqerewq
-{% endhint %}
+> weqrcewrqcewr
+
+| vrete | wvetre |
+| :--- | :--- |
+| vwert | vwert |
 
