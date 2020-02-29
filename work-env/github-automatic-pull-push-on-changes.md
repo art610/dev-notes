@@ -77,7 +77,7 @@ $$
 
 **Flow charts**
 
-```text
+```flow
 st=>start: Start
 e=>end
 op=>operation: My Operation
@@ -90,7 +90,7 @@ cond(no)->op
 
 **Sequence diagrams**
 
-```text
+```diagram
 Alice->Bob: Hello Bob, how are you?
 Note right of Bob: Bob thinks
 Bob-->Alice: I am good thanks!
