@@ -1,5 +1,7 @@
 # Первичная настройка Debian 10
 
+## Основная конфигурация
+
 После конфигурирования доступа по SSH и создания системного пользователя переходим к настройке операционной системы и установке требуемых пакетов. Дальнейшие действия производим непосредственно на удаленном сервере Debian при подключении по SSH через утилиту PuTTY \(или терминал Linux\). 
 
 В самом начале добавим возможность получения пакетов из non-free репозиториев, для этого необходимо отредактировать файл sources.list. Однако на Beget VPS данный файл создается автоматически и может быть затем перезаписан, ввиду этого  необходимо изменить параметр`apt_preserve_sources_list: true` в файле `/etc/cloud/cloud.cfg`, для этого используем следующие команды:
@@ -104,5 +106,58 @@ npm -v
 git --version && python -V && pip -V
 which python
 which python3.8
+```
+
+### Установка NGINX из исходников
+
+Пакет nginx доступен в прекомпилированном виде для любого дистрибутива. Идеально собирать NGINX из исходников самостоятельно и сделать его более компактным и надежным.
+
+```bash
+# переходим в /opt
+cd /opt
+# получаем исходники
+wget https://github.com/nginx/nginx/archive/release-1.17.8.tar.gz
+# распаковываем содержимое полученного архива
+tar xf release-1.17.8.tar.gz
+# переходим в папку с исходниками
+cd nginx-release-1.17.8
+```
+
+Изменим строку приветствия Web-сервера, чтобы выдавать поменьше информации. Для этого скачиваем исходники Nginx, открываем в них файл src/http/ngx\_http\_header\_filter\_module.c и находим следующие строки:
+
+```bash
+static char ngx_http_server_string[] = "Server: nginx" CRLF;
+static char ngx_http_server_full_string[] = "Server: " NGINX_VER CRLF;
+```
+
+Заменяем их так, чтобы не показывать название веб-сервера:
+
+```bash
+static char ngx_http_server_string[] = "Server: ][ Web Server" CRLF;
+static char ngx_http_server_full_string[] = "Server: ][ Web Server" CRLF;
+```
+
+Удаляем все неиспользуемые модули \(выполняем [сборку](https://nginx.org/ru/docs/configure.html), исключая ненужные модули\). Отключая ненужные модули мы снижаем вероятность того, что со временем будет найдена уязвимость:
+
+```bash
+# посмотрим модули
+auto/configure --help
+# конфигурируем
+auto/configure \
+--without-http_autoindex_module --without-http_ssi_module \
+--with-mail_ssl_module --with-http_ssl_module --with-http_v2_module --with-http_realip_module
+# запускаем сборку
+make -s && make -s install
+```
+
+Так ты получишь nginx с заранее отключенными \(и в большинстве случаев бесполезными\) модулями SSI \(Server Side Includes\) и Autoindex. Чтобы узнать, какие модули можно безболезненно выбросить из Web-сервера, запусти скрипт configure с флагом --help.
+
+### Добавление SSL бота
+
+```bash
+# переходим в директорию по умолчанию
+cd ~
+# Установим дополнительные пакеты certbot для SSL/TLS
+sudo apt install -y certbot python3-certbot-nginx
 ```
 

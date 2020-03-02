@@ -1,18 +1,6 @@
 # Table of contents
 
 * [Проектирование и документирование программных систем](README.md)
-* [Документирование в разработке ПО](dokumentirovanie-v-razrabotke-po.md)
-
-## Work env
-
-* [Github Automatic Pull/Push on changes](work-env/github-automatic-pull-push-on-changes.md)
-* [Разработка программного обеспечения](work-env/simple-note/README.md)
-  * [Постановка задачи на разработку ПО](work-env/simple-note/postanovka-zadachi-na-razrabotku-po.md)
-  * [Теория систем](work-env/simple-note/teoriya-sistem.md)
-
-## Бизнес и системная архитектура
-
-* [Бизнес-процессы и системный анализ](biznes-i-sistemnaya-arkhitektura/biznes-processy-i-sistemnyi-analiz.md)
 
 ## Сервера и администрирование <a id="vps-vds"></a>
 
@@ -21,6 +9,18 @@
   * [SSH доступ к серверу](vps-vds/sozdanie-i-nastroika-vps/ssh-dostup.md)
   * [Первичная настройка Debian 10](vps-vds/sozdanie-i-nastroika-vps/pervichnaya-nastroika-debian-10.md)
   * [Git/GitHub - контроль версий](vps-vds/sozdanie-i-nastroika-vps/git-github-kontrol-versii.md)
+
+## Work env
+
+* [Документирование в разработке ПО](work-env/dokumentirovanie-v-razrabotke-po.md)
+* [Github Automatic Pull/Push on changes](work-env/github-automatic-pull-push-on-changes.md)
+* [Разработка программного обеспечения](work-env/simple-note/README.md)
+  * [Постановка задачи на разработку ПО](work-env/simple-note/postanovka-zadachi-na-razrabotku-po.md)
+  * [Теория систем](work-env/simple-note/teoriya-sistem.md)
+
+## Бизнес и системная архитектура
+
+* [Бизнес-процессы и системный анализ](biznes-i-sistemnaya-arkhitektura/biznes-processy-i-sistemnyi-analiz.md)
 
 ## Django Framework
 
