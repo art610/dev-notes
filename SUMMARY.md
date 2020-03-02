@@ -18,7 +18,7 @@
 
 * [Создание и настройка VPS/VDS](vps-vds/sozdanie-i-nastroika-vps/README.md)
   * [Создание Beget VPS](vps-vds/sozdanie-i-nastroika-vps/sozdanie-beget-vps.md)
-  * [SSH доступ](vps-vds/sozdanie-i-nastroika-vps/ssh-dostup.md)
+  * [SSH доступ к серверу](vps-vds/sozdanie-i-nastroika-vps/ssh-dostup.md)
 
 ## Django Framework
 
