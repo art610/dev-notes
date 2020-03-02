@@ -58,10 +58,8 @@ shell:startup    # откроет папку программ на автоза�
 
 * Первый элемент
 * Второй элемент
-
-1. То это
-2. То то
-
+* То это
+* То то
 * [x] Задача 1
 * [ ] Задача 2
 * [ ] Задача 3
@@ -71,13 +69,11 @@ $$
 x = \dfrac{-b \pm \sqrt{b^2 - 4ac}}{2a}
 $$
 
-
-
-#### Diagrams
+## Diagrams
 
 **Flow charts**
 
-```flow
+```text
 st=>start: Start
 e=>end
 op=>operation: My Operation
@@ -90,7 +86,7 @@ cond(no)->op
 
 **Sequence diagrams**
 
-```sequence
+```text
 Alice->Bob: Hello Bob, how are you?
 Note right of Bob: Bob thinks
 Bob-->Alice: I am good thanks!
