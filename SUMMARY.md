@@ -19,6 +19,8 @@
 * [Создание и настройка VPS/VDS](vps-vds/sozdanie-i-nastroika-vps/README.md)
   * [Создание Beget VPS](vps-vds/sozdanie-i-nastroika-vps/sozdanie-beget-vps.md)
   * [SSH доступ к серверу](vps-vds/sozdanie-i-nastroika-vps/ssh-dostup.md)
+  * [Первичная настройка Debian 10](vps-vds/sozdanie-i-nastroika-vps/pervichnaya-nastroika-debian-10.md)
+  * [Git/GitHub - контроль версий](vps-vds/sozdanie-i-nastroika-vps/git-github-kontrol-versii.md)
 
 ## Django Framework
 
