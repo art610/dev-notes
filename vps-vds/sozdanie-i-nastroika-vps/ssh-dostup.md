@@ -106,7 +106,7 @@ sudo mkdir ~/.ssh
 sudo nano ~/.ssh/authorized_keys
 ```
 
-![](../../.gitbook/assets/image%20%2828%29.png)
+![](../../.gitbook/assets/1582900204676.png)
 
 Переводим курсор на пустую строку ниже. На своем компьютере Windows копируем ранее созданный ключ из текстового файла или из области Key утилиты PuTTYgen. 
 
