@@ -107,6 +107,11 @@ Install ROS from sources files:
 
 Script:
 
+Run:
+сделать файлы скриптов исполняемыми и убрать лишние управляющие символы
+```sed -i -e 's/\r$//' /opt/fast_serv/* && sudo chmod +x /opt/fast_serv/*```
+
+
 ```bash
 #!/bin/bash
 
