@@ -55,3 +55,7 @@ Install ROS on Ubuntu18.4
 http://wiki.ros.org/melodic/Installation/Ubuntu
 
 https://www.theconstructsim.com/how-to-install-ros-on-ubuntu/
+
+Uninstall all ROS packages:
+sudo apt-get remove ros-*
+
