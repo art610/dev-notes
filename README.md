@@ -59,3 +59,48 @@ https://www.theconstructsim.com/how-to-install-ros-on-ubuntu/
 Uninstall all ROS packages:
 sudo apt-get remove ros-*
 
+Install ROS from sources files:
+```
+   29  sudo apt-get install python-rosdep python-rosinstall-generator python-wstool build-essential
+   30  sudo rosdep init
+   31  rosdep update
+   32  mkdir ~/ros_catkin_ws
+   33  cd ~/ros_catkin_ws
+   34  rosinstall_generator desktop --rosdistro melodic --deps --tar > melodic-desktop.rosinstall
+   35  vcs import src < melodic-desktop.rosinstall
+   36  sudo apt-get install vcs
+   37  sudo apt-get install python3-vcstool
+   38  vcs import src < melodic-desktop.rosinstall
+   39  ls
+   40  mkdir src
+   41  vcs import src < melodic-desktop.rosinstall
+   42  rosdep install --from-paths src --ignore-src --rosdistro melodic -y
+   43  sudo rosdep install --from-paths src --ignore-src --rosdistro melodic -y
+   44  sudo apt-get install -y python-opencv
+   45  ps aux | grep -i apt
+   46  sudo kill -9 11751
+   47  sudo kill -9 11755
+   48  sudo kill -9 11996
+   49  ps aux | grep -i apt
+   50  sudo kill -9 12026
+   51  ps aux | grep -i apt
+   52  rosdep install --from-paths src --ignore-src --rosdistro melodic -y
+   53  sudo killall apt apt-get
+   54  ls /var/lib/apt/
+   55  ls /var/lib/apt/lists/
+   56  rosdep install --from-paths src --ignore-src --rosdistro melodic -y
+   57  sudo apt-get update
+   58  rosdep install --from-paths src --ignore-src --rosdistro melodic -y
+   59  sudo rm /var/lib/dpkg/lock-frontend
+   60  sudo dpkg --configure -a
+   61  sudo rm /var/lib/dpkg/lock
+   62  sudo rm /var/cache/apt/archives/lock
+   63  sudo rm /var/lib/apt/lists/lock
+   64  sudo dpkg --configure -a
+   65  clear
+   66  rosdep install --from-paths src --ignore-src --rosdistro melodic -y
+   67  ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release
+   68  source ~/ros_catkin_ws/install_isolated/setup.bash
+   69  roscore
+
+```
