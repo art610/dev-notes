@@ -27,6 +27,7 @@ https://stackoverflow.com/questions/61430166/python-3-7-on-ubuntu-20-04
 
 
 Install ROS on Ubuntu18.4
+```
     5  sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
     6  sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
     7  sudo apt-get update
@@ -49,7 +50,7 @@ Install ROS on Ubuntu18.4
    24  source ~/.bashrc
    25  roscore
    26  history
-
+```
 
 http://wiki.ros.org/melodic/Installation/Ubuntu
 https://www.theconstructsim.com/how-to-install-ros-on-ubuntu/
