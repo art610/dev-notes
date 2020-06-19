@@ -21,3 +21,6 @@ sudo ssh -vT git@github.com
 ```
 
 https://vk.com/doc363366274_550670627?hash=9b799060e0d6f814d3&dl=7899683d9158a3857a
+
+Install python 3.7
+https://stackoverflow.com/questions/61430166/python-3-7-on-ubuntu-20-04
