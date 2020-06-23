@@ -1,4 +1,4 @@
-```
+```bash
 #!/bin/bash
 clear
 #dpkg --get-selections | awk -F "mp3info" '{print $1}'
