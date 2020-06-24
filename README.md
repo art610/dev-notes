@@ -142,3 +142,35 @@ sudo apt-get install net-tools
 netstat -nlp | grep 5432
 ```
 
+## Run WikiJS as service
+
+```
+# Create a new file named wiki.service inside directory /etc/systemd/system
+nano /etc/systemd/system/wiki.service
+
+# Paste the following contents (assuming your wiki is installed at /var/wiki)
+  [Unit]
+  Description=Wiki.js
+  After=network.target
+
+  [Service]
+  Type=simple
+  ExecStart=/usr/bin/node server
+  Restart=always
+  # Consider creating a dedicated user for Wiki.js here:
+  User=nobody
+  Environment=NODE_ENV=production
+  WorkingDirectory=/var/wiki
+
+  [Install]
+  WantedBy=multi-user.target
+
+# Reload systemd
+systemctl daemon-reload
+# Run the service
+systemctl start wiki
+# Enable the service on system boot
+systemctl enable wiki
+```
+
+You can see the logs of the service using `journalctl -u wiki`
