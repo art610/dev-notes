@@ -47,6 +47,16 @@ GRANT ALL PRIVILEGES ON DATABASE wikijsdb TO wikijsdbuser;
 
 Install wikiJS
 ```
+# Add repo for NodeJS 12.x
+sudo apt-get install curl
+sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+# Install latest version
+sudo apt-get update && sudo apt-get install yarn gcc g++ make
+sudo apt-get install -y nodejs
+# Check version
+node -v
+npm -v
+
 # Download the latest version of Wiki.js
 wget https://github.com/Requarks/wiki/releases/download/2.4.107/wiki-js.tar.gz
 # Extract the package to the final destination of your choice
@@ -124,5 +134,11 @@ More configs on https://docs.requarks.io/install/config
 Run wikijs:
 ```
 node server
+```
+
+Check ports using net-stat:
+```
+sudo apt-get install net-tools
+netstat -nlp | grep 5432
 ```
 
