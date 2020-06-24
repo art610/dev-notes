@@ -149,21 +149,21 @@ netstat -nlp | grep 5432
 nano /etc/systemd/system/wiki.service
 
 # Paste the following contents (assuming your wiki is installed at /var/wiki)
-  [Unit]
-  Description=Wiki.js
-  After=network.target
+[Unit]
+Description=Wiki.js
+After=network.target
 
-  [Service]
-  Type=simple
-  ExecStart=/usr/bin/node server
-  Restart=always
-  # Consider creating a dedicated user for Wiki.js here:
-  User=nobody
-  Environment=NODE_ENV=production
-  WorkingDirectory=/var/wiki
+[Service]
+Type=simple
+# Add dir to wikijs files
+ExecStart=/usr/bin/node /opt/wiki/server
+Restart=always
+# Consider creating a dedicated user for Wiki.js here:
+User=nobody
+WorkingDirectory=/var/wiki
 
-  [Install]
-  WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target
 
 # Reload systemd
 systemctl daemon-reload
@@ -174,3 +174,12 @@ systemctl enable wiki
 ```
 
 You can see the logs of the service using `journalctl -u wiki`
+
+Add dir to your wikijs installation dir in config.yml:
+
+```
+sudo nano config.yml
+# in the end of file add this (or different dir)
+dataPath: /opt/wiki/data
+```
+
