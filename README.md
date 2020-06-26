@@ -1,6 +1,214 @@
-# MiniDevLab on Ubuntu
+# MiniDevLab on Linux (local network dev host)
 
-## PostgreSQL 12.3 installation on Linux Ubuntu 18.04
+## Настройка репозиториев на Debian 10 buster
+```bash
+# редактируем файл sources.list (добавляем contrib non-free для каждого репозитория)
+sudo nano /etc/apt/sources.list
+
+# Следует привести файл /etc/apt/sources.list к следующему виду
+deb <http://deb.debian.org/debian> buster main contrib non-free
+deb-src <http://deb.debian.org/debian> buster main contrib non-free
+deb <http://security.debian.org/> buster/updates main contrib non-free
+deb-src <http://security.debian.org/> buster/updates main contrib non-free
+deb <http://deb.debian.org/debian> buster-updates main contrib non-free
+deb-src <http://deb.debian.org/debian> buster-updates main contrib non-free
+deb <http://deb.debian.org/debian> buster-backports main contrib non-free
+deb-src <http://deb.debian.org/debian> buster-backports main contrib non-free
+
+# сохраняем изменения: Ctrl+X затем Y и Enter
+```
+
+## Установим базовые компоненты
+
+```bash
+# повышаем права до root и переходим в домашнюю директорию root-пользователя
+sudo su
+cd
+# устанавливаем sudo (если отсутствует)
+apt-get install sudo
+visudo	# файл с настройками
+# Создаем пользователя (указываем пароль и др. данные) и добавляем его в sudo
+sudo adduser <username>
+sudo usermod -aG sudo <username>
+sudo apt-get update
+
+# обновляем зависимости и пакеты
+apt-get -y update && apt-get -y dist-upgrade
+# устанавливаем необходимые пакеты одной командной (\ перенос строки для удобства)
+sudo apt-get -y install \
+	libtiff5-dev \
+	libjpeg62-turbo-dev \
+	zlib1g-dev \
+	libfreetype6-dev \
+	liblcms2-dev \
+	libwebp-dev \
+	tcl8.6-dev \
+	tk8.6-dev \
+	libc-dev \
+	libffi-dev \
+	libssl-dev \
+	libbz2-dev \
+	libncursesw5-dev \
+	libgdbm-dev \
+	liblzma-dev \
+	libsqlite3-dev \
+	libreadline-dev \
+	build-essential \
+	libncurses5-dev \
+	libnss3-dev \
+	tk-dev \
+	uuid-dev \
+	gcc \
+	g++ \
+	man \
+	curl \
+	wget \
+  nginx \
+	ufw \
+	git 
+
+# nginx установлен стандартными методами для локального сервера
+# обновляем зависимости и пакеты
+apt-get -y update && apt-get -y dist-upgrade
+
+# настраиваем firewall утилитой ufw
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
+# при необходимости не забываем открыть другие порты
+
+# добавим репозиторий с последней версией NodeJS - 12 на текущий момент
+# для установки других версий заменяем значение 12.x на необходимое
+sudo curl -sL <https://deb.nodesource.com/setup_12.x> | sudo -E bash -
+# установим последнюю версию
+sudo apt-get install -y nodejs
+sudo apt-get update && sudo apt-get install yarn
+# обновляем зависимости и пакеты
+apt-get -y update && apt-get -y dist-upgrade
+# проверяем версии nodejs и npm
+nodejs -v && node -v && npm -v
+
+# установим python 3.8.3 - последняя версия на данный момент
+# скачиваем исходник XZ с официального сайта (можно взять ссылку на любую версию)
+cd /opt
+curl -O https://www.python.org/ftp/python/3.8.3/Python-3.8.3.tar.xz
+# разархивируем исходники
+tar -xf Python-3.8.3.tar.xz
+# сконфигурируем и проверим исходники для сборки, создаем MAKEFILE
+cd Python-3.8.3
+./configure --enable-optimizations
+# запустим сборку из исходников (нужно будет подождать окончания сборки ~15 мин)
+make
+# компилируем и устанавливаем
+make altinstall 
+# выставляем приоритет запуска версий (чем выше последняя цифра - выше приоритет)
+update-alternatives --install /usr/bin/python python /usr/local/bin/python3.8 2
+# обновляем зависимости
+apt-get -y update && apt-get -y dist-upgrade
+# устанавливаем дополнительные пакеты pip
+python -m pip install --upgrade pip
+python3.8 -m pip install virtualenv
+python3.8 -m pip install virtualenvwrapper
+sudo apt-get -y install python3-dev
+# обновляем зависимости
+apt-get -y update && apt-get -y dist-upgrade
+# очистим старые записи после обновления
+hash -d pip
+# проверим версии python и pip
+python -V && pip -V
+
+# включаем FireWall
+ufw enable
+# просмотрим установленные правила firewall 
+ufw status
+
+# переходим в директорию по умолчанию
+cd ~
+# Установим дополнительные пакеты certbot для SSL/TLS
+sudo apt install -y certbot python3-certbot-nginx
+
+# обновляем зависимости
+sudo apt-get -y update && apt-get -y dist-upgrade
+
+# выводим основную информацию
+cat /etc/os-release    # информация о релизе ОС
+arch    # архитектура ОС
+nodejs -v
+node -v
+npm -v
+git --version && python -V && pip -V
+which python
+which python3.8
+
+# удаляем временные файлы и подчищаем после установки
+rm /opt/Python-3.8.3.tar.xz
+sudo rm /etc/nginx/sites-available/default
+sudo rm /etc/nginx/sites-enabled/default
+```
+
+## Доступ из локальной сети по SSH
+
+```
+# узнаем ip компьютера
+ip a 
+# установка ssh-server
+apt-get install openssh-server
+# включение сервера ssh
+systemctl enable ssh
+systemctl start ssh
+service ssh start	# stop - выключение
+# файл с настройками ssh
+nano /etc/ssh/sshd_config
+# с другого компьютера заходим по ssh
+ssh username@host/ip
+# перезапуск ssh сервера
+sudo systemctl restart ssh
+```
+
+## Отключение графического интерфейса сервера
+
+```
+# переходим в консоль по Ctrl+Alt+F1
+# определим имя графического менеджера
+aptitude search '~i~Px-display-manager'
+# перейдем в многопользовательский режим 
+systemctl set-default multi-user.target
+# управление менеджером графики
+sudo service lightdm <stop | start | restart> 
+# просмотр текущего режима
+systemctl get-default
+# включение графического интерфейса
+systemctl set-default graphical.target
+# можем также удалить графический пакет (не рекомендуется)
+sudo aptitude -y remove xserver-xorg-core
+```
+
+## Настройка локального сервера в сети
+
+Для повышения защищенности виртуальной машины в данном случае следует настроить подключение с использованием SSH-ключей, а не логина и пароля. 
+```
+# создаем ключи
+ssh-keygen -t rsa
+# сохраняем открытый ключ на сервере в домашнем каталоге учетной записи нужного пользователя
+cat ~/.ssh/id_rsa_ssh_connect.pub | cat >>  ~/.ssh/authorized_keys
+# для безопасности
+chown -R <username> /home/<username>/.ssh
+chmod 700 /home/<username>/.ssh/
+chmod 600 /home/<username>/.ssh/authorized_keys
+# проверяем
+ssh <username>@[remote_server]
+# при необходимости смотрим логи
+nano /var/log/auth.log
+# в файле /etc/ssh/sshd_config должны быть строки:
+    RSAAuthentication yes
+    PubkeyAuthentication yes
+    AuthorizedKeysFile .ssh/authorized_keys
+# для запрета авторизации по паролям выставим в файле /etc/ssh/sshd_config
+    PasswordAuthentication no
+    PermitEmptyPasswords no
+```
+
+## Установка PostgreSQL 12.3
 
 ```bash
 # Create the file repository configuration:
@@ -47,16 +255,6 @@ GRANT ALL PRIVILEGES ON DATABASE wikijsdb TO wikijsdbuser;
 
 Install wikiJS
 ```
-# Add repo for NodeJS 12.x
-sudo apt-get install curl
-sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-# Install latest version
-sudo apt-get update && sudo apt-get install yarn gcc g++ make
-sudo apt-get install -y nodejs
-# Check version
-node -v
-npm -v
-
 # Download the latest version of Wiki.js
 wget https://github.com/Requarks/wiki/releases/download/2.4.107/wiki-js.tar.gz
 # Extract the package to the final destination of your choice
