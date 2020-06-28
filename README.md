@@ -567,3 +567,30 @@ sudo chmod a+x uninstall
 
 Стоит также установить плагин Draw.io для создания диаграмм в Confluence. В управлении приложениями можно включить стандартные макросы HTML (по умолчанию они отключены). Не забываем их отключить при установке на production сервер.
 
+## Установка GitLab
+
+```
+# установить требуемые зависимости
+sudo apt-get update
+sudo apt-get install -y curl openssh-server ca-certificates postfix
+
+# добавить репозиторий
+curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash
+# установить gitlab-ce
+sudo apt-get install gitlab-ce
+# редактируем конфиг
+sudo nano /etc/gitlab/gitlab.rb
+# указываем в следующей строке доменное имя или ip-адрес
+external_url 'http://example.com'
+# можно изменить также следующие строки
+nginx['enable'] = false # выключение встроенного nginx
+web_server['external_users'] = ['www-data'] # пользователь, от имени которого работает веб-сервер
+gitlab_rails['trusted_proxies'] = [ '127.0.0.1', '<внешний IP адрес сервера>' ] # параметр для определения IP адресов проксируемого сервера
+gitlab_workhorse['listen_network'] = "unix" # протокол для работы с веб-сервером
+gitlab_workhorse['listen_addr'] = "/var/opt/gitlab/gitlab-workhorse/socket" # интерфейс и порт для прослушивания
+# сохраняем конфигурацию и применяем изменения
+gitlab-ctl reconfigure
+# в Debian 10 может потребоваться создать симлинк и затем повторно применить изменения
+ln -s /usr/sbin/sysctl /bin/sysctl 
+
+```
