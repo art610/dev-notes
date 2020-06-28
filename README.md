@@ -1,6 +1,7 @@
 # MiniDevLab on Linux (local network dev host)
 
-## Настройка репозиториев на Debian 10 buster
+## Первоначальная настройка
+### Настройка репозиториев на Debian 10 buster
 ```bash
 # редактируем файл sources.list (добавляем contrib non-free для каждого репозитория)
 sudo nano /etc/apt/sources.list
@@ -18,7 +19,7 @@ deb-src <http://deb.debian.org/debian> buster-backports main contrib non-free
 # сохраняем изменения: Ctrl+X затем Y и Enter
 ```
 
-## Установим базовые компоненты
+### Установим базовые компоненты
 
 ```bash
 # повышаем права до root и переходим в домашнюю директорию root-пользователя
@@ -146,7 +147,7 @@ sudo rm /etc/nginx/sites-available/default
 sudo rm /etc/nginx/sites-enabled/default
 ```
 
-## Доступ из локальной сети по SSH
+### Доступ из локальной сети по SSH
 
 ```
 # узнаем ip компьютера
@@ -165,7 +166,7 @@ ssh username@host/ip
 sudo systemctl restart ssh
 ```
 
-## Безопасный доступ по SSH
+### Безопасный доступ по SSH
 Если мы хотим получать доступ к серверу по SSH, то стоит отключить возможность входа от суперпользователя и доступ по паролю.
 Изначально создаем пользователя и добавляем его в sudo
 ```
@@ -249,7 +250,7 @@ userdel -r <username>    # удалить учетную запись польз
 ```
 
 
-## Отключение графического интерфейса сервера
+### Отключение графического интерфейса сервера
 
 ```
 # переходим в консоль по Ctrl+Alt+F1
@@ -267,7 +268,7 @@ systemctl set-default graphical.target
 sudo aptitude -y remove xserver-xorg-core
 ```
 
-## Настройка локального сервера в сети
+### Настройка локального сервера в сети
 
 Для повышения защищенности виртуальной машины в данном случае следует настроить подключение с использованием SSH-ключей, а не логина и пароля. 
 ```
@@ -292,7 +293,7 @@ nano /var/log/auth.log
     PermitEmptyPasswords no
 ```
 
-## Установка PostgreSQL 12.3
+### Установка PostgreSQL 12.3
 
 ```bash
 # Create the file repository configuration:
@@ -424,7 +425,7 @@ sudo apt-get install net-tools
 netstat -nlp | grep 5432
 ```
 
-## Run WikiJS as service
+### Run WikiJS as service
 
 ```
 # Create a new file named wiki.service inside directory /etc/systemd/system
@@ -464,4 +465,89 @@ sudo nano config.yml
 # in the end of file add this (or different dir)
 dataPath: /opt/wiki/data
 ```
+
+## Установка Jira & Confluence
+
+Создание базы данных в postgres:
+```
+su - postgres
+psql
+# создание базы данных под confluence и пользователя для atlassian продуктов
+CREATE DATABASE confluencedb with encoding='UNICODE';
+CREATE USER atlasianusr with password 'naI@93*w';
+GRANT ALL PRIVILEGES ON DATABASE confluencedb TO atlasianusr;
+# создание базы данных под jira
+CREATE DATABASE jiradb with encoding='UNICODE';
+GRANT ALL PRIVILEGES ON DATABASE jiradb TO atlasianusr;
+# вывести список доступных баз данных
+\l;
+# установка пароля для postgres
+psql -U postgres -c "ALTER USER postgres PASSWORD 'gJo610kkB$'"
+# выход
+\q
+exit
+```
+
+Настраиваем порты
+```
+ufw allow 11312/tcp	# confluence main port
+ufw allow 11314/tcp	# confluence control port
+ufw allow 11313/tcp	# jira main port
+ufw allow 11315/tcp	# jira control port
+```
+
+Вначале установим Jira, чтобы можно было цетрализованно работать с пользователями.
+
+### Установка Jira 
+
+```
+# скачиваем установочный пакет
+mkdir /opt/jira/ && cd /opt/jira/
+sudo wget https://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-software-8.10.0-x64.bin
+# даем права на исполнение и устанавливаем
+sudo chmod a+x atlassian-jira-software-8.10.0-x64.bin
+sudo ./atlassian-jira-software-8.10.0-x64.bin
+# в ходе установки указываем директории /home/atlassian/jira и /home/atlassian/application-data/jira, порты 11313 и 11315 и соглашаемся на установку системного демона (y)
+# команды для управления
+sudo service jira <start | stop | restart>
+systemctl  <start | stop | status | restart> jira.service
+# базовые директории для jira
+/home/atlassian/jira
+/home/atlassian/application-data/jira
+# конфиг сервера
+/home/atlassian/jira/conf/server.xml
+```
+
+Далее переходим к настройке jira в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и данные нового пользователя. 
+
+### Установка Confluence
+
+```
+# скачиваем установочный пакет
+mkdir /opt/confluence/ && cd /opt/confluence/
+sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.5.2-x64.bin
+# даем права на исполнение и устанавливаем
+sudo chmod a+x atlassian-confluence-7.5.2-x64.bin
+sudo ./atlassian-confluence-7.5.2-x64.bin
+# в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 11312 и 11314 и соглашаемся на установку системного демона (y)
+
+# команды для управления
+sudo service confluence <start | stop | restart>
+systemctl  <start | stop | status | restart> confluence.service
+# базовые директории для Confluence
+/home/atlassian/confluence 
+/home/atlassian/application-data/confluence
+# конфиг сервера
+/home/atlassian/confluence/conf/server.xml
+
+# для полного удаления выполнить следующее
+systemctl  stop confluence.service
+cd /home/atlassian/confluence/
+sudo chmod a+x uninstall
+./uninstall
+```
+
+Далее переходим к настройке Confluence в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и данные нового пользователя. 
+
+Стоит также установить плагин Draw.io для создания диаграмм в Confluence. В управлении приложениями можно включить стандартные макросы HTML (по умолчанию они отключены). Не забываем их отключить при установке на production сервер.
 
