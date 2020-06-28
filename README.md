@@ -594,3 +594,38 @@ gitlab-ctl reconfigure
 ln -s /usr/sbin/sysctl /bin/sysctl 
 
 ```
+
+## Установка seafile pro 
+
+```
+# установка СУБД MySQL
+sudo apt-get install mysql-server	# задать пароль суперпользователя
+# для повышения безопасности
+sudo mysql_secure_installation	# только на смену пароля отвечаем No
+# проверяем установку базы данных
+sudo service mysql status	# sudo service mysql start|restart|stop
+# подключение можно выполнить так
+mysql -u <имя_пользователя> -p		# <имя_пользователя> - root
+
+# установка дополнительных пакетов
+apt-get update
+apt-get install python3 python3-setuptools python3-pip python3-imaging python3-mysqldb -y 
+pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
+sudo apt-get install openjdk-8-jre
+sudo apt-get install poppler-utils
+# проверяем Python 2.7
+sudo easy_install pip
+sudo pip install boto
+sudo pip install setuptools --no-use-wheel --upgrade
+
+# скачать и распаковать пакет
+sudo wget <link>
+tar xf seafile-pro-server_7.1.4_x86-64.tar.gz
+# директории перед установкой будут выглядеть так
+<main_dir>
+├── seafile-license.txt
+└── seafile-pro-server-7.1.4/
+# запускаем скрипт для проверки баз данных и установки
+cd seafile-pro-server-7.1.4
+./setup-seafile-mysql.sh 
+```
