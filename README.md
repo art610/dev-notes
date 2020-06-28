@@ -7,16 +7,18 @@
 sudo nano /etc/apt/sources.list
 
 # Следует привести файл /etc/apt/sources.list к следующему виду
-deb <http://deb.debian.org/debian> buster main contrib non-free
-deb-src <http://deb.debian.org/debian> buster main contrib non-free
-deb <http://security.debian.org/> buster/updates main contrib non-free
-deb-src <http://security.debian.org/> buster/updates main contrib non-free
-deb <http://deb.debian.org/debian> buster-updates main contrib non-free
-deb-src <http://deb.debian.org/debian> buster-updates main contrib non-free
-deb <http://deb.debian.org/debian> buster-backports main contrib non-free
-deb-src <http://deb.debian.org/debian> buster-backports main contrib non-free
+deb http://deb.debian.org/debian buster main contrib non-free
+deb-src http://deb.debian.org/debian buster main contrib non-free
+deb http://security.debian.org/ buster/updates main contrib non-free
+deb-src http://security.debian.org/ buster/updates main contrib non-free
+deb http://deb.debian.org/debian buster-updates main contrib non-free
+deb-src http://deb.debian.org/debian buster-updates main contrib non-free
+deb http://deb.debian.org/debian buster-backports main contrib non-free
+deb-src http://deb.debian.org/debian buster-backports main contrib non-free
 
 # сохраняем изменения: Ctrl+X затем Y и Enter
+# обновим зависимости
+sudo apt update
 ```
 
 ### Установим базовые компоненты
@@ -31,7 +33,6 @@ visudo	# файл с настройками
 # Создаем пользователя (указываем пароль и др. данные) и добавляем его в sudo
 sudo adduser <username>
 sudo usermod -aG sudo <username>
-sudo apt-get update
 
 # обновляем зависимости и пакеты
 apt-get -y update && apt-get -y dist-upgrade
@@ -64,13 +65,13 @@ sudo apt-get -y install \
 	man \
 	curl \
 	wget \
-  nginx \
+	nginx \
 	ufw \
 	git 
 
 # nginx установлен стандартными методами для локального сервера
 # обновляем зависимости и пакеты
-apt-get -y update && apt-get -y dist-upgrade
+apt update
 
 # настраиваем firewall утилитой ufw
 ufw default deny incoming
@@ -80,7 +81,7 @@ ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
 
 # добавим репозиторий с последней версией NodeJS - 12 на текущий момент
 # для установки других версий заменяем значение 12.x на необходимое
-sudo curl -sL <https://deb.nodesource.com/setup_12.x> | sudo -E bash -
+sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
 # установим последнюю версию
 sudo apt-get install -y nodejs
 sudo apt-get update && sudo apt-get install yarn
@@ -100,7 +101,7 @@ cd Python-3.8.3
 ./configure --enable-optimizations
 # запустим сборку из исходников (нужно будет подождать окончания сборки ~15 мин)
 make
-# компилируем и устанавливаем
+# устанавливаем в системные директории
 make altinstall 
 # выставляем приоритет запуска версий (чем выше последняя цифра - выше приоритет)
 update-alternatives --install /usr/bin/python python /usr/local/bin/python3.8 2
@@ -134,9 +135,7 @@ sudo apt-get -y update && apt-get -y dist-upgrade
 # выводим основную информацию
 cat /etc/os-release    # информация о релизе ОС
 arch    # архитектура ОС
-nodejs -v
-node -v
-npm -v
+nodejs -v && node -v && npm -v
 git --version && python -V && pip -V
 which python
 which python3.8
@@ -150,8 +149,26 @@ sudo rm /etc/nginx/sites-enabled/default
 ### Доступ из локальной сети по SSH
 
 ```
-# узнаем ip компьютера
+# смотрим сетевые интерфейсы
 ip a 
+# редактируем настройки сети
+sudo nano /etc/network/interfaces
+# меняем параметр dhcp на static и дописываем нужные параметры сети
+iface ens33 inet static
+	address 192.168.1.15
+	netmask 255.255.255.0
+	network 192.168.1.0
+	broadcast 192.168.1.1
+	dns-nameservers 192.168.1.1
+	# dns-nameservers 8.8.8.8 8.8.4.4
+
+# перезапускаем сеть
+systemctl restart networking
+# проверяем настройки сети
+ip addr show
+# если интерфейс не поднялся, то выполняем
+sudo ifup enp0s3
+
 # установка ssh-server
 apt-get install openssh-server
 # включение сервера ssh
@@ -314,11 +331,6 @@ su - postgres
 psql
 SELECT version();
 
-# Create user and DB
-CREATE DATABASE <dbname> with encoding='UNICODE';
-CREATE USER <username> with password '<userpassword>';
-GRANT ALL PRIVILEGES ON DATABASE <dbname> TO <username>;
-
 # exit
 \q
 exit
@@ -336,16 +348,19 @@ psql
 CREATE DATABASE wikijsdb with encoding='UNICODE';
 CREATE USER wikijsdbuser with password 'naI@93*w';
 GRANT ALL PRIVILEGES ON DATABASE wikijsdb TO wikijsdbuser;
+\q
+exit
 ```
 
 Install wikiJS
 ```
 # Download the latest version of Wiki.js
+cd opt
 wget https://github.com/Requarks/wiki/releases/download/2.4.107/wiki-js.tar.gz
 # Extract the package to the final destination of your choice
-mkdir wiki
-tar xzf wiki-js.tar.gz -C ./wiki
-cd ./wiki
+mkdir /home/wiki
+tar xzf wiki-js.tar.gz -C /home/wiki
+cd /home/wiki
 # Rename the sample config file to config.yml
 mv config.sample.yml config.yml
 ```
@@ -364,6 +379,12 @@ db:
   user: wikijsdbuser
   pass: naI@93*w
   db: wikijsdb
+```
+
+Data folder on the end of file:
+
+```
+dataPath: /home/wiki/data
 ```
 
 Offline Mode
@@ -414,8 +435,9 @@ Once your HTTPS is up and working correctly, you can enable HTTP to HTTPS redire
 
 More configs on https://docs.requarks.io/install/config
 
-Run wikijs:
+Open port and run wikijs:
 ```
+ufw allow 3000/tcp
 node server
 ```
 
@@ -439,11 +461,11 @@ After=network.target
 [Service]
 Type=simple
 # Add dir to wikijs files
-ExecStart=/usr/bin/node /opt/wiki/server
+ExecStart=/usr/bin/node /home/wiki/server
 Restart=always
 # Consider creating a dedicated user for Wiki.js here:
 User=nobody
-WorkingDirectory=/var/wiki
+WorkingDirectory=/home/wiki
 
 [Install]
 WantedBy=multi-user.target
@@ -458,13 +480,7 @@ systemctl enable wiki
 
 You can see the logs of the service using `journalctl -u wiki`
 
-Add dir to your wikijs installation dir in config.yml:
-
-```
-sudo nano config.yml
-# in the end of file add this (or different dir)
-dataPath: /opt/wiki/data
-```
+При необходимости, также выставить права 666 на package.json
 
 ## Установка Jira & Confluence
 
@@ -515,7 +531,7 @@ systemctl  <start | stop | status | restart> jira.service
 /home/atlassian/jira
 /home/atlassian/application-data/jira
 # конфиг сервера
-/home/atlassian/jira/conf/server.xml
+/home/atlassian/jira/conf/server.xmly
 ```
 
 Далее переходим к настройке jira в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и данные нового пользователя. 
