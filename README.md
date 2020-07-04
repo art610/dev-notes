@@ -1,5 +1,10 @@
 # MiniDevLab on Linux (local network dev host)
 
+# add ssh
+```
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDZK44dzjOycObUUro8GSo4OlCxGbbCiO4cQFjgYorc25QpN3aC3Li5dGQwj9TRp3bW2NQpnG10lPDxwgGyhzdCZn/cgG2/HsOOIUxpzvFlLj69GxhTnFQX+kN1hMjDdbJVYZgqVUjDBE06P+EzCRFFVA1g1ThFkJApko3s/LyYx7V5sPrfjvF2+iu+LQwJKOR7I/WK7RK8/JJBdJ9DL+AC8Ica5cI5rFyEbmmtfGHk4ga5dei4zhifITmFCGJLm9/bg6TeMf8EqcD6LvEg7HJbK2srb46qQJmS2yDewLqEuiPKbDuYVnwU2GT5ad557cYqEVlBN9KR7Fpd2OFnIhYn74f+Hq3wg+I8ftQx4Lp7DtnhBYt1y0Ny4HbzocHTlOximXzrmIQcDSxjMHsOH8s+mepXcLAHNX/L+4zkEvnLEKtShArmi0CECKxAue/cwbOPmkTZRtqbABTEiNMy0hrxOCWBlOvx3rV0noBa6dScb+qLlp7VciXzoLBr6+gj9dKp50oVJfVCVfgEE2ef014bGffClsSmlVQG/TmbJEcUI5fPUEMC0rZKt8dU3b/YlwZY/4Cz7F6qpvfpVWiYdLZm5a4dOy8QHYr7EMd2/HdyDc9grPOUEVdwycvj2Kelin4S5ivekSX63Cy0X/MIzJXyxqLX+Eqb5I222FG0ZxvmMQ== artif467@gmail.com
+```
+
 ## Первоначальная настройка
 ### Настройка репозиториев на Debian 10 buster
 ```bash
