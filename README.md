@@ -764,12 +764,17 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 
-# Reload systemd
+# Создадим пользователя
+sudo adduser seafile
+sudo usermod -aG sudo seafile
+# Дадим ему права
+chown -R seafile:seafile /home/seafile
+# Перезапустим systemd
 systemctl daemon-reload
-# Run the service
-systemctl start wiki
+# Запускаем сервис
+systemctl start seafile
 # Enable the service on system boot
-systemctl enable wiki
+systemctl enable seafile
 ```
 
 You can see the logs of the service using `journalctl -u wiki`
@@ -778,5 +783,6 @@ You can see the logs of the service using `journalctl -u wiki`
 
 
 ./seafile.sh start 
+ufw allow 11318/tcp
 ./seahub.sh start 11318 
 
