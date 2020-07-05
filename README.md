@@ -525,10 +525,10 @@ systemctl  <start | stop | status | restart> jira.service
 ```
 # скачиваем установочный пакет
 mkdir /opt/confluence/ && cd /opt/confluence/
-sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.5.2-x64.bin
+sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.6.0-x64.bin
 # даем права на исполнение и устанавливаем
-sudo chmod a+x atlassian-confluence-7.5.2-x64.bin
-sudo ./atlassian-confluence-7.5.2-x64.bin
+sudo chmod a+x atlassian-confluence-7.6.0-x64.bin
+sudo ./atlassian-confluence-7.6.0-x64.bin
 # в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 11312 и 11314 и соглашаемся на установку системного демона (y)
 
 # команды для управления
