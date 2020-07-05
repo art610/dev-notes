@@ -576,8 +576,91 @@ gitlab_workhorse['listen_addr'] = "/var/opt/gitlab/gitlab-workhorse/socket" # и
 gitlab-ctl reconfigure
 # в Debian 10 может потребоваться создать симлинк и затем повторно применить изменения
 ln -s /usr/sbin/sysctl /bin/sysctl 
-
 ```
+
+GitLab использует собственный инстанс PostgreSQL, но мы подключим его к общему. Для этого создадим базу данных и пользователя:
+```
+su - postgres
+psql
+CREATE DATABASE gitlabhq_production with encoding='UNICODE';
+CREATE USER gitlabusr with password 'bFET9BD7!Wwc';
+GRANT ALL PRIVILEGES ON DATABASE gitlabhq_production TO gitlabusr;
+# дадим права суперпользователя для автоматической установки требуемых расширений
+ALTER USER gitlabusr WITH SUPERUSER;
+```
+
+Затем нужно добавить в /etc/gitlab/gitlab.rb следующее:
+```
+# откроем в редакторе
+sudo nano /etc/gitlab/gitlab.rb
+
+# добавим настройки базы данных
+postgresql['listen_address'] = '0.0.0.0'
+postgresql['port'] = 5432
+postgresql['md5_auth_cidr_addresses'] = %w()
+postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24)
+postgresql['sql_user'] = "gitlabusr"
+
+##! SQL_USER_PASSWORD_HASH can be generated using the command `gitlab-ctl pg-password-md5 gitlab`,
+##! where `gitlab` is the name of the SQL user that connects to GitLab.
+postgresql['sql_user_password'] = "SQL_USER_PASSWORD_HASH"
+
+# force ssl on all connections defined in trust_auth_cidr_addresses and md5_auth_cidr_addresses
+postgresql['hostssl'] = false
+
+gitlab_rails['db_host'] = '127.0.0.1'
+gitlab_rails['db_port'] = 5432
+gitlab_rails['db_username'] = "gitlabusr"
+gitlab_rails['db_password'] = "bFET9BD7!Wwc"
+```
+
+Добавим Redis:
+```
+# установим redis-server
+sudo apt-get install redis-server
+# перейдем в консоль redis
+redis-cli
+ping	# output -> PONG
+# установка прошла успешно
+```
+
+Внесем изменения в конфиг GitLab:
+```
+# откроем в редакторе
+sudo nano /etc/gitlab/gitlab.rb
+
+# добавим настройки redis
+redis['enable'] = false
+# Redis via TCP
+gitlab_rails['redis_host'] = '127.0.0.1'
+gitlab_rails['redis_port'] = 6379
+# Password to Authenticate to alternate local Redis if required
+gitlab_rails['redis_password'] = 'Redis Password'
+```
+
+Настроим Redis:
+```
+# откроем файл конфигурации
+sudo nano /etc/redis/redis.conf
+# находим и расскомментим строку
+bind 127.0.0.1 ::1
+# установим пароль
+# ищем строку requirepass foobared - расскоментим и изменим foobared на пароль
+requirepass bxP5xk%1LRx3
+
+# сохраняем и перезапускаем 
+sudo systemctl restart redis.service
+```
+
+Далее переконфигурируем gitlab и перезапустим postgres:
+```
+sudo gitlab-ctl reconfigure
+gitlab-ctl restart postgresql
+
+# посмотреть лог
+sudo nano /var/log/gitlab/gitlab-rails/production.log
+```
+
 
 ## Установка seafile pro 
 
