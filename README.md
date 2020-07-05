@@ -661,6 +661,7 @@ gitlab-ctl restart postgresql
 sudo nano /var/log/gitlab/gitlab-rails/production.log
 ```
 
+При первой загрузке страницы GitLab будет предложено ввести новый пароль для пользователя root, при помощи которого можно получить доступ к Admin Area. Если есть проблемы с доступом через localhost, то стоит его добавить в Admin Area -> Settings -> Network -> Outbound requests -> установить галочку Allow requests to the local network from web hooks and services и в поле ниже ввести хост сервера (127.0.0.1 и т.п.), можно также указывать конкретный порт.
 
 ## Установка seafile pro 
 
