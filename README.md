@@ -667,33 +667,116 @@ sudo nano /var/log/gitlab/gitlab-rails/production.log
 
 ```
 # установка СУБД MySQL
-sudo apt-get install mysql-server	# задать пароль суперпользователя
-# для повышения безопасности
-sudo mysql_secure_installation	# только на смену пароля отвечаем No
+# устанавливаем и настраиваем базу данных MariaDB Server
+sudo apt-get -y install mariadb-server
+# перезапускаем сервер баз данных
+sudo systemctl restart mysql
+
+# установим пароль суперпользователя MySQL
+sudo mysql -u root
+use mysql;
+UPDATE user set password=PASSWORD("bbByz56h@l$b") where User='root';
+FLUSH PRIVILEGES;
+update user set plugin='' where User='root';
+exit;
+# перезапускаем сервер баз данных
+systemctl restart mariadb
+# теперь настроим безопасное подключение к БД
+sudo mysql_secure_installation 	# только на смену пароля отвечаем No
+# перезапускаем сервер баз данных
+systemctl restart mariadb
+
+# теперь получить доступ к серверу БД можно только по паролю
+sudo mysql -uroot -p
+
+# seafile во время установки запросит пароль от root и установит требуемые БД
+
 # проверяем установку базы данных
 sudo service mysql status	# sudo service mysql start|restart|stop
-# подключение можно выполнить так
-mysql -u <имя_пользователя> -p		# <имя_пользователя> - root
+
+# подключение можно выполнять так
+mysql -u <имя_пользователя> -p	
 
 # установка дополнительных пакетов
-apt-get update
-apt-get install python3 python3-setuptools python3-pip python3-imaging python3-mysqldb -y 
-pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
+sudo apt-get update
+sudo apt-get install python3 \
+	python3-setuptools \
+	python3-pip \
+	python3-pil \
+	python3-mysqldb -y 
+	
+sudo apt-get install -y libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential
+
+pip install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
+# установка openjdk
+sudo su	# [root]
+sudo nano /etc/apt/sources.list
+# add this: deb http://ftp.us.debian.org/debian sid main
+sudo apt-get update
 sudo apt-get install openjdk-8-jre
+# delete string in /etc/apt/sources.list
+sudo update-alternatives --config java	# дополнительно
+# show version
+java -version
+
+# Install poppler-utils
 sudo apt-get install poppler-utils
-# проверяем Python 2.7
-sudo easy_install pip
+# Install Python libraries
 sudo pip install boto
-sudo pip install setuptools --no-use-wheel --upgrade
+sudo pip install setuptools --upgrade
 
 # скачать и распаковать пакет
-sudo wget https://download.seafile.com/d/6e5297246c/files/?p=%2Fpro%2Fseafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz&dl=1
-tar xf seafile-pro-server_7.1.4_x86-64.tar.gz
+cd /opt
+sudo wget https://download.seafile.com/d/6e5297246c/files/?p=%2Fpro%2Fseafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+tar xf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+mkdir /home/seafile
+mv /opt/seafile/seafile-pro-server-7.1.5 /home/seafile/seafile-pro-server-7.1.5
+cd /home/seafile/seafile-pro-server-7.1.5
 # директории перед установкой будут выглядеть так
 <main_dir>
 ├── seafile-license.txt
-└── seafile-pro-server-7.1.4/
-# запускаем скрипт для проверки баз данных и установки
-cd seafile-pro-server-7.1.4
+└── seafile-pro-server-7.1.5/
+# откроем порт
+sudo ufw allow 11317/tcp
+# запускаем установку
+sudo su
 ./setup-seafile-mysql.sh 
+
+# запускаем как сервис через системного демона
+# Create a new file named seafile.service inside directory /etc/systemd/system
+nano /etc/systemd/system/seafile.service
+
+# Paste the following contents
+[Unit]
+Description=Seafile hub
+After=network.target seafile.service
+
+[Service]
+# change start to start-fastcgi if you want to run fastcgi
+Environment="LC_ALL=C"
+ExecStart=/home/seafile/seafile-server-latest/seahub.sh start-fastcgi
+ExecStop=/home/seafile/seafile-server-latest/seahub.sh stop
+User=seafile
+Group=seafile
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+# Reload systemd
+systemctl daemon-reload
+# Run the service
+systemctl start wiki
+# Enable the service on system boot
+systemctl enable wiki
 ```
+
+You can see the logs of the service using `journalctl -u wiki`
+
+При необходимости, также выставить права 666 на package.json
+
+
+./seafile.sh start 
+./seahub.sh start 11318 
+
