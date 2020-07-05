@@ -687,7 +687,7 @@ sudo pip install boto
 sudo pip install setuptools --no-use-wheel --upgrade
 
 # скачать и распаковать пакет
-sudo wget <link>
+sudo wget https://download.seafile.com/d/6e5297246c/?p=/pro
 tar xf seafile-pro-server_7.1.4_x86-64.tar.gz
 # директории перед установкой будут выглядеть так
 <main_dir>
