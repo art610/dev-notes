@@ -146,7 +146,7 @@ sudo rm /etc/nginx/sites-available/default
 sudo rm /etc/nginx/sites-enabled/default
 ```
 
-### Доступ из локальной сети по SSH
+### Доступ из локальной сети
 
 ```
 # смотрим сетевые интерфейсы
@@ -168,24 +168,13 @@ systemctl restart networking
 ip addr show
 # если интерфейс не поднялся, то выполняем
 sudo ifup enp0s3
-
-# установка ssh-server
-apt-get install openssh-server
-# включение сервера ssh
-systemctl enable ssh
-systemctl start ssh
-service ssh start	# stop - выключение
-# файл с настройками ssh
-nano /etc/ssh/sshd_config
-# с другого компьютера заходим по ssh
-ssh username@host/ip
-# перезапуск ssh сервера
-sudo systemctl restart ssh
 ```
 
-### Безопасный доступ по SSH
+### Доступ по SSH
+
 Если мы хотим получать доступ к серверу по SSH, то стоит отключить возможность входа от суперпользователя и доступ по паролю.
 Изначально создаем пользователя и добавляем его в sudo
+
 ```
 # создаем системного пользователя Debian
 sudo adduser <username>
@@ -202,12 +191,31 @@ sudo su
 exit
 # выходим из-под созданного пользователя
 ```
+
 В итоге мы создали нового системного пользователя в Debian <username>.
 
 Создаем ssh-ключ для данного пользователя
 ```
-# на клиентской машине создаем ssh-ключ (указываем путь к ключу)
+# установка ssh-server
+apt-get install openssh-server
+# включение сервера ssh
+systemctl enable ssh
+systemctl start ssh
+service ssh start	# stop - выключение
+# файл с настройками ssh
+nano /etc/ssh/sshd_config
+# вход с другого компьютера -> ssh username@host/ip
+# перезапуск ssh сервера
+sudo systemctl restart ssh
+
+# на клиентской машине, с которой будем подключаться, создаем ssh-ключ (указываем путь к ключу)
 ssh-keygen -t rsa -b 4096 -C "mail@mail.com"
+
+# на Windows переходим в папку C:/Windows/System32/OpenSSH, где расположен ssh-client
+# при необходимости в Параметр -> Приложения -> Доп. компоненты установим ssh-клиента
+# если при вызове ssh-agent происходит ошибка, то выполняем в PowerShell
+Set-Service ssh-agent -StartupType Manual
+
 # теперь созданный ключ надо установить на сервер
 # можно использовать такую команду
 cat ~/.ssh/id_rsa.pub | ssh <username>@host_id 'cat >> ~/.ssh/authorized_keys'
@@ -232,6 +240,7 @@ start ssh-agent
 ssh-add ~/.ssh/id_rsa
 # далее пробуем зайти
 ssh <username>@host_id
+# либо с использованием PuTTY
 ```
 
 После того, как мы убедились, что мы имеем доступ по ключу и учетным данным созданного пользователя отключаем вход по паролям и с аккаунта суперпользователя root:
@@ -281,33 +290,8 @@ sudo service lightdm <stop | start | restart>
 systemctl get-default
 # включение графического интерфейса
 systemctl set-default graphical.target
-# можем также удалить графический пакет (не рекомендуется)
-sudo aptitude -y remove xserver-xorg-core
-```
-
-### Настройка локального сервера в сети
-
-Для повышения защищенности виртуальной машины в данном случае следует настроить подключение с использованием SSH-ключей, а не логина и пароля. 
-```
-# создаем ключи
-ssh-keygen -t rsa
-# сохраняем открытый ключ на сервере в домашнем каталоге учетной записи нужного пользователя
-cat ~/.ssh/id_rsa_ssh_connect.pub | cat >>  ~/.ssh/authorized_keys
-# для безопасности
-chown -R <username> /home/<username>/.ssh
-chmod 700 /home/<username>/.ssh/
-chmod 600 /home/<username>/.ssh/authorized_keys
-# проверяем
-ssh <username>@[remote_server]
-# при необходимости смотрим логи
-nano /var/log/auth.log
-# в файле /etc/ssh/sshd_config должны быть строки:
-    RSAAuthentication yes
-    PubkeyAuthentication yes
-    AuthorizedKeysFile .ssh/authorized_keys
-# для запрета авторизации по паролям выставим в файле /etc/ssh/sshd_config
-    PasswordAuthentication no
-    PermitEmptyPasswords no
+# можем также удалить графический пакет (крайне не рекомендуется)
+# sudo aptitude -y remove xserver-xorg-core
 ```
 
 ### Установка PostgreSQL 12.3
