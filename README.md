@@ -708,6 +708,25 @@ sudo apt-get install python3 \
 sudo apt-get install -y libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential
 
 pip install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
+
+pip install --timeout=3600 Pillow 
+pip install --timeout=3600 pylibmc 
+pip install --timeout=3600 captcha 
+pip install --timeout=3600 jinja2 
+pip install --timeout=3600 sqlalchemy 
+pip install --timeout=3600 django-pylibmc 
+pip install --timeout=3600 django-simple-captcha 
+pip install --timeout=3600 python-ldap
+
+pip3 install --timeout=3600 Pillow 
+pip3 install --timeout=3600 pylibmc 
+pip3 install --timeout=3600 captcha 
+pip3 install --timeout=3600 jinja2 
+pip3 install --timeout=3600 sqlalchemy 
+pip3 install --timeout=3600 django-pylibmc 
+pip3 install --timeout=3600 django-simple-captcha 
+pip3 install --timeout=3600 python3-ldap
+
 # установка openjdk
 sudo su	# [root]
 sudo nano /etc/apt/sources.list
@@ -786,3 +805,4 @@ You can see the logs of the service using `journalctl -u wiki`
 ufw allow 11318/tcp
 ./seahub.sh start 11318 
 
+https://github.com/haiwen/seafile-server-installer
