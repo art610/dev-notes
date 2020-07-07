@@ -964,3 +964,94 @@ server {
 ln -sf /etc/nginx/sites-available/seafile.conf /etc/nginx/sites-enabled/seafile.conf
 service nginx restart
 ```
+
+# Seafile configs [/opt/seafile/conf]
+
+## ccnet.conf
+
+```config
+[General]
+SERVICE_URL = http://127.0.0.1:8000
+
+[Database]
+ENGINE = mysql
+HOST = 127.0.0.1
+PORT = 3306
+USER = seafile
+PASSWD = Fee3eena
+DB = ccnet_db
+CONNECTION_CHARSET = utf8
+```
+
+## gunicorn.conf.py
+
+```config
+import os
+
+daemon = True
+workers = 5
+
+# default localhost:8000
+bind = "127.0.0.1:8000"
+
+# Pid
+pids_dir = '/opt/seafile/pids'
+pidfile = os.path.join(pids_dir, 'seahub.pid')
+
+# for file upload, we need a longer timeout value (default is only 30s, too short)
+timeout = 1200
+
+limit_request_line = 8190
+```
+
+## seafdav.conf
+
+```
+[WEBDAV]
+enabled = true
+port = 8080
+fastcgi = true
+share_name = /seafdav
+```
+
+## seafevents.conf
+
+```
+[DATABASE]
+type = mysql
+host = 127.0.0.1
+port = 3306
+username = seafile
+password = Fee3eena
+name = seahub_db
+
+
+
+[AUDIT]
+enabled = true
+
+[INDEX FILES]
+enabled = true
+interval = 10m
+
+highlight = fvh
+
+## If true, indexes the contents of office/pdf files while updating search index
+## Note: If you change this option from "false" to "true", then you need to clear the search index and update the index again. See the FAQ for details.
+index_office_pdf = true
+
+[OFFICE CONVERTER]
+enabled = true
+workers = 1
+
+[SEAHUB EMAIL]
+enabled = true
+
+## interval of sending Seahub email. Can be s(seconds), m(minutes), h(hours), d(days)
+interval = 30m
+
+# Enable statistics
+[STATISTICS]
+enabled=true
+```
+
