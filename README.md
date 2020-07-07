@@ -663,155 +663,12 @@ sudo nano /var/log/gitlab/gitlab-rails/production.log
 
 При первой загрузке страницы GitLab будет предложено ввести новый пароль для пользователя root, при помощи которого можно получить доступ к Admin Area. Если есть проблемы с доступом через localhost, то стоит его добавить в Admin Area -> Settings -> Network -> Outbound requests -> установить галочку Allow requests to the local network from web hooks and services и в поле ниже ввести хост сервера (127.0.0.1 и т.п.), можно также указывать конкретный порт.
 
-## Установка seafile pro 
 
-```
-# установка СУБД MySQL
-# устанавливаем и настраиваем базу данных MariaDB Server
-sudo apt-get -y install mariadb-server
-# перезапускаем сервер баз данных
-sudo systemctl restart mysql
-
-# установим пароль суперпользователя MySQL
-sudo mysql -u root
-use mysql;
-UPDATE user set password=PASSWORD("bbByz56h@l$b") where User='root';
-FLUSH PRIVILEGES;
-update user set plugin='' where User='root';
-exit;
-# перезапускаем сервер баз данных
-systemctl restart mariadb
-# теперь настроим безопасное подключение к БД
-sudo mysql_secure_installation 	# только на смену пароля отвечаем No
-# перезапускаем сервер баз данных
-systemctl restart mariadb
-
-# теперь получить доступ к серверу БД можно только по паролю
-sudo mysql -uroot -p
-
-# seafile во время установки запросит пароль от root и установит требуемые БД
-
-# проверяем установку базы данных
-sudo service mysql status	# sudo service mysql start|restart|stop
-
-# подключение можно выполнять так
-mysql -u <имя_пользователя> -p	
-
-# установка дополнительных пакетов
-sudo apt-get update
-sudo apt-get install python3 \
-	python3-setuptools \
-	python3-pip \
-	python3-pil \
-	python3-mysqldb -y 
-	
-sudo apt-get install -y libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential
-
-pip install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
-
-pip install --timeout=3600 Pillow 
-pip install --timeout=3600 pylibmc 
-pip install --timeout=3600 captcha 
-pip install --timeout=3600 jinja2 
-pip install --timeout=3600 sqlalchemy 
-pip install --timeout=3600 django-pylibmc 
-pip install --timeout=3600 django-simple-captcha 
-pip install --timeout=3600 python-ldap
-
-pip3 install --timeout=3600 Pillow 
-pip3 install --timeout=3600 pylibmc 
-pip3 install --timeout=3600 captcha 
-pip3 install --timeout=3600 jinja2 
-pip3 install --timeout=3600 sqlalchemy 
-pip3 install --timeout=3600 django-pylibmc 
-pip3 install --timeout=3600 django-simple-captcha 
-pip3 install --timeout=3600 python3-ldap
-
-# установка openjdk
-sudo su	# [root]
-sudo nano /etc/apt/sources.list
-# add this: deb http://ftp.us.debian.org/debian sid main
-sudo apt-get update
-sudo apt-get install openjdk-8-jre
-# delete string in /etc/apt/sources.list
-sudo update-alternatives --config java	# дополнительно
-# show version
-java -version
-
-# Install poppler-utils
-sudo apt-get install poppler-utils
-# Install Python libraries
-sudo pip install boto
-sudo pip install setuptools --upgrade
-
-# скачать и распаковать пакет
-cd /opt
-sudo wget https://download.seafile.com/d/6e5297246c/files/?p=%2Fpro%2Fseafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
-tar xf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
-mkdir /home/seafile
-mv /opt/seafile/seafile-pro-server-7.1.5 /home/seafile/seafile-pro-server-7.1.5
-cd /home/seafile/seafile-pro-server-7.1.5
-# директории перед установкой будут выглядеть так
-<main_dir>
-├── seafile-license.txt
-└── seafile-pro-server-7.1.5/
-# откроем порт
-sudo ufw allow 11317/tcp
-# запускаем установку
-sudo su
-./setup-seafile-mysql.sh 
-
-# запускаем как сервис через системного демона
-# Create a new file named seafile.service inside directory /etc/systemd/system
-nano /etc/systemd/system/seafile.service
-
-# Paste the following contents
-[Unit]
-Description=Seafile hub
-After=network.target seafile.service
-
-[Service]
-# change start to start-fastcgi if you want to run fastcgi
-Environment="LC_ALL=C"
-ExecStart=/home/seafile/seafile-server-latest/seahub.sh start-fastcgi
-ExecStop=/home/seafile/seafile-server-latest/seahub.sh stop
-User=seafile
-Group=seafile
-Type=oneshot
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-
-# Создадим пользователя
-sudo adduser seafile
-sudo usermod -aG sudo seafile
-# Дадим ему права
-chown -R seafile:seafile /home/seafile
-# Перезапустим systemd
-systemctl daemon-reload
-# Запускаем сервис
-systemctl start seafile
-# Enable the service on system boot
-systemctl enable seafile
-```
-
-You can see the logs of the service using `journalctl -u wiki`
-
-При необходимости, также выставить права 666 на package.json
-
-
-./seafile.sh start 
-ufw allow 11318/tcp
-./seahub.sh start 11318 
-
-https://github.com/haiwen/seafile-server-installer
-
-
-# Install seafile like script
+# Install Seafile pro 7.1.5
 
 ```bash
 
+Get Seafile Pro 7.1.5 package and put in `/opt` directory
 
 # -------------------------------------------
 # Additional requirements
@@ -842,6 +699,17 @@ apt-get install -y mariadb-server
 service mysql start
 
 mysqladmin -u root password g6O9DVxi8$n6 	# <root-password>
+
+# теперь настроим безопасное подключение к БД
+sudo mysql_secure_installation 	# только на смену пароля отвечаем No
+
+# seafile во время установки запросит пароль от root и установит требуемые БД
+
+# проверяем установку базы данных
+sudo service mysql status	# sudo service mysql start|restart|stop
+
+# подключение можно выполнять так
+mysql -u <имя_пользователя> -p	
 
 # -------------------------------------------
 # Seafile
@@ -899,8 +767,6 @@ pkill -9 -u seafile
 # -------------------------------------------
 
 chown seafile:seafile -R /tmp/seafile-office-output/
-
-
 ```
 
 # Seafile NGINX config
@@ -961,12 +827,6 @@ server {
         error_log       /var/log/nginx/seafdav.error.log;
     }
 }
-```
-
-Затем:
-```
-ln -sf /etc/nginx/sites-available/seafile.conf /etc/nginx/sites-enabled/seafile.conf
-service nginx restart
 ```
 
 # Seafile configs [/opt/seafile/conf]
@@ -1129,3 +989,132 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE     = False
 
 FILE_SERVER_ROOT                    = 'http://127.0.0.1/seafhttp'
 ```
+
+# Start Seafile as service
+
+Add configs for systemd:
+
+For seafile.service:
+```ini
+[Unit]
+Description=Seafile
+# link to mysql.service or postgresql.service
+After=network.target mysql.service
+
+[Service]
+# type can be one of: simple, exec, forking, oneshot, dbus, notify or idle
+# more info https://www.freedesktop.org/software/systemd/man/systemd.service.html
+Type=forking
+ExecStart=/opt/seafile/seafile-server-latest/seafile.sh start
+ExecStop=/opt/seafile/seafile-server-latest/seafile.sh stop
+User=seafile
+Group=seafile
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+For seahub.service:
+```
+[Unit]
+Description=Seafile hub
+After=network.target seafile.service
+
+[Service]
+# type can be one of: simple, exec, forking, oneshot, dbus, notify or idle
+# more info https://www.freedesktop.org/software/systemd/man/systemd.service.html
+Type=forking
+# change start to start-fastcgi if you want to run fastcgi
+ExecStart=/opt/seafile/seafile-server-latest/seahub.sh start
+ExecStop=/opt/seafile/seafile-server-latest/seahub.sh stop
+User=seafile
+Group=seafile
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Stop all earlie running processes for seafile/seahub:
+```bash
+sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seafile.sh stop
+sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seahub.sh stop
+
+# kill all process
+pkill -9 -u seafile
+```
+
+Start seafile as service:
+```bash
+# Перезапустим systemd
+systemctl daemon-reload
+# Запускаем сервис seafile
+systemctl start seafile
+# Enable the service on system boot
+systemctl enable seafile
+# Run seahub service
+systemctl start seahub
+# Enable the service on system boot
+systemctl enable seahub
+```
+
+You can see the logs of the service using `journalctl -u wiki`
+
+More info: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/other-deployment-notes/start-seafile-at-system-bootup
+
+Script for autoinstall: 
+
+
+## Install additional packages
+
+```
+# установка дополнительных пакетов
+sudo apt-get update
+sudo apt-get install python3 \
+	python3-setuptools \
+	python3-pip \
+	python3-pil \
+	python3-mysqldb -y 
+	
+sudo apt-get install -y libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential
+
+pip install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
+
+pip install --timeout=3600 Pillow 
+pip install --timeout=3600 pylibmc 
+pip install --timeout=3600 captcha 
+pip install --timeout=3600 jinja2 
+pip install --timeout=3600 sqlalchemy 
+pip install --timeout=3600 django-pylibmc 
+pip install --timeout=3600 django-simple-captcha 
+pip install --timeout=3600 python-ldap
+
+pip3 install --timeout=3600 Pillow 
+pip3 install --timeout=3600 pylibmc 
+pip3 install --timeout=3600 captcha 
+pip3 install --timeout=3600 jinja2 
+pip3 install --timeout=3600 sqlalchemy 
+pip3 install --timeout=3600 django-pylibmc 
+pip3 install --timeout=3600 django-simple-captcha 
+pip3 install --timeout=3600 python3-ldap
+
+# установка openjdk
+sudo su	# [root]
+sudo nano /etc/apt/sources.list
+# add this: deb http://ftp.us.debian.org/debian sid main
+sudo apt-get update
+sudo apt-get install openjdk-8-jre
+# delete string in /etc/apt/sources.list
+sudo update-alternatives --config java	# дополнительно
+# show version
+java -version
+
+# Install poppler-utils
+sudo apt-get install poppler-utils
+# Install Python libraries
+sudo pip install boto
+sudo pip install setuptools --upgrade
+```
+
+
