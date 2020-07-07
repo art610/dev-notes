@@ -818,11 +818,9 @@ https://github.com/haiwen/seafile-server-installer
 # -------------------------------------------
 apt-get update
 
-apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached openjdk-8-jre \
-    libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx
+apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached openjdk-8-jre libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx
 
-pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools \
-    django-pylibmc django-simple-captcha
+pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools django-pylibmc django-simple-captcha
 
 
 service memcached start
@@ -843,7 +841,7 @@ service nginx restart
 apt-get install -y mariadb-server
 service mysql start
 
-mysqladmin -u root password <root-password>
+mysqladmin -u root password g6O9DVxi8$n6 	# <root-password>
 
 # -------------------------------------------
 # Seafile
@@ -864,7 +862,8 @@ mkdir -p /opt/seafile/seafile-pro-server-7.1.5/conf
 # Create ccnet, seafile, seahub conf using setup script
 # -------------------------------------------
 
-./setup-seafile-mysql.sh auto -u seafile -w <mysql-seafile-password> -r <mysql-root-password>
+# -w <mysql-seafile-password> -r <mysql-root-password>
+./setup-seafile-mysql.sh auto -u seafile -w Cj6yaRO#TWv6 -r g6O9DVxi8$n6
 
 # -------------------------------------------
 # Configure Seafile WebDAV Server(SeafDAV)
@@ -877,7 +876,7 @@ mkdir -p /opt/seafile/seafile-pro-server-7.1.5/conf
 chown seafile:seafile -R /opt/seafile
 
 PRO_PY=${INSTALLPATH}/pro/pro.py
-python /opt/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=<mysql-seafile-password> --mysql_db=seahub_db
+python /opt/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
 
 # kill all process
 pkill -9 -u seafile
@@ -978,7 +977,7 @@ ENGINE = mysql
 HOST = 127.0.0.1
 PORT = 3306
 USER = seafile
-PASSWD = Fee3eena
+PASSWD = Cj6yaRO#TWv6
 DB = ccnet_db
 CONNECTION_CHARSET = utf8
 ```
@@ -1022,7 +1021,7 @@ type = mysql
 host = 127.0.0.1
 port = 3306
 username = seafile
-password = Fee3eena
+password = Cj6yaRO#TWv6
 name = seahub_db
 
 
@@ -1066,7 +1065,7 @@ type = mysql
 host = 127.0.0.1
 port = 3306
 user = seafile
-password = Fee3eena
+password = Cj6yaRO#TWv6
 db_name = seafile_db
 connection_charset = utf8
 ```
@@ -1082,7 +1081,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'seahub_db',
         'USER': 'seafile',
-        'PASSWORD': 'Fee3eena',
+        'PASSWORD': 'Cj6yaRO#TWv6',
         'HOST': '127.0.0.1',
         'PORT': '3306'
     }
