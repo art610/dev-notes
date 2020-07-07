@@ -811,15 +811,7 @@ https://github.com/haiwen/seafile-server-installer
 # Install seafile like script
 
 ```bash
-# -------------------------------------------
-# Vars
-# -------------------------------------------
-SEAFILE_ADMIN=admin@seafile.local
-SEAFILE_SERVER_USER=seafile
-SEAFILE_SERVER_HOME=/opt/seafile
-IP_OR_DOMAIN=127.0.0.1
-SEAFILE_VERSION=$1	# первый аргумент при запуске 
-TIME_ZONE=Europe/Moscow
+
 
 # -------------------------------------------
 # Additional requirements
@@ -866,14 +858,6 @@ useradd --system --comment "seafile" seafile --home-dir  /opt/seafile
 
 cd /opt/seafile/seafile-pro-server-7.1.5
 
-# -------------------------------------------
-# Vars - Don't touch these unless you really know what you are doing!
-# -------------------------------------------
-TOPDIR=$(dirname "${INSTALLPATH}")
-DEFAULT_CONF_DIR=${TOPDIR}/conf
-SEAFILE_DATA_DIR=${TOPDIR}/seafile-data
-DEST_SETTINGS_PY=${TOPDIR}/conf/seahub_settings.py
-
 mkdir -p /opt/seafile/seafile-pro-server-7.1.5/conf
 
 # -------------------------------------------
@@ -913,4 +897,70 @@ service seafile-server start	# using initial script
 sudo -u seafile /opt/seafile/seafile-pro-server-7/seafile.sh start
 sudo -u seafile /opt/seafile/seafile-pro-server-7/seahub.sh start
 
+```
+
+# Seafile NGINX config
+
+Add to `/etc/nginx/sites-available/seafile.conf`
+
+```NGINX
+log_format seafileformat '$http_x_forwarded_for $remote_addr [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $upstream_response_time';
+
+server {
+    listen 80;
+    server_name seafile.example.com;
+
+    proxy_set_header X-Forwarded-For $remote_addr;
+
+    location / {
+         proxy_pass         http://127.0.0.1:8000;
+         proxy_set_header   Host $host;
+         proxy_set_header   X-Real-IP $remote_addr;
+         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_set_header   X-Forwarded-Host $server_name;
+         proxy_set_header   X-Forwarded-Proto $scheme;
+         proxy_read_timeout  1200s;
+
+         # used for view/edit office file via Office Online Server
+         client_max_body_size 0;
+
+         access_log      /var/log/nginx/seahub.access.log seafileformat;
+         error_log       /var/log/nginx/seahub.error.log;
+    }
+    
+    location /seafhttp {
+         rewrite ^/seafhttp(.*)$ $1 break;
+         proxy_pass http://127.0.0.1:8082;
+         client_max_body_size 0;
+         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_connect_timeout  36000s;
+         proxy_read_timeout  36000s;
+
+        access_log      /var/log/nginx/seafhttp.access.log seafileformat;
+        error_log       /var/log/nginx/seafhttp.error.log;
+    }
+    location /media {
+        root /opt/seafile/seafile-server-latest/seahub;
+    }
+    location /seafdav {
+        proxy_pass         http://127.0.0.1:8080/seafdav;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Host $server_name;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout  1200s;
+
+        client_max_body_size 0;
+
+        access_log      /var/log/nginx/seafdav.access.log seafileformat;
+        error_log       /var/log/nginx/seafdav.error.log;
+    }
+}
+```
+
+Затем:
+```
+ln -sf /etc/nginx/sites-available/seafile.conf /etc/nginx/sites-enabled/seafile.conf
+service nginx restart
 ```
