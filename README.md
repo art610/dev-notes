@@ -667,8 +667,7 @@ sudo nano /var/log/gitlab/gitlab-rails/production.log
 # Install Seafile pro 7.1.5
 
 ```bash
-
-Get Seafile Pro 7.1.5 package and put in `/opt` directory
+# Get Seafile Pro 7.1.5 package and put in `/home` directory
 
 # -------------------------------------------
 # Additional requirements
@@ -687,8 +686,8 @@ service memcached start
 # -------------------------------------------
 
 rm /etc/nginx/sites-enabled/*
-nano /etc/nginx/sites-available/seafile.conf
-ln -sf /etc/nginx/sites-available/seafile.conf /etc/nginx/sites-enabled/seafile.conf
+nano /etc/nginx/sites-available/seafile_nginx.conf
+ln -sf /etc/nginx/sites-available/seafile-nginx.conf /etc/nginx/sites-enabled/seafile_nginx.conf
 service nginx restart
 
 # -------------------------------------------
@@ -715,16 +714,16 @@ mysql -u <имя_пользователя> -p
 # Seafile
 # -------------------------------------------
 
-mkdir -p /opt/seafile
-mkdir -p /opt/seafile/installed
-cd /opt/seafile
-mv /opt/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /opt/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+mkdir -p /home/seafile
+mkdir -p /home/seafile/installed
+cd /home/seafile
+mv /home/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 tar xzf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
-mv /opt/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /opt/seafile/installed/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+mv /home/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/installed/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 
-useradd --system --comment "seafile" seafile --home-dir  /opt/seafile
+useradd --system --comment "seafile" seafile --home-dir  /home/seafile
 
-cd /opt/seafile/seafile-pro-server-7.1.5
+cd /home/seafile/seafile-pro-server-7.1.5
 
 # -------------------------------------------
 # Create ccnet, seafile, seahub conf using setup script
@@ -741,23 +740,22 @@ cd /opt/seafile/seafile-pro-server-7.1.5
 # Configuring seahub_settings.py
 # -------------------------------------------
 
-chown seafile:seafile -R /opt/seafile
+chown seafile:seafile -R /home/seafile
 
-python /opt/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
+python /home/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
 
 # -------------------------------------------
 # Fix permissions
 # -------------------------------------------
-chown seafile:seafile -R /opt/seafile
+
+chown seafile:seafile -R /home/seafile
 
 # -------------------------------------------
 # Start seafile server
 # -------------------------------------------
-service seafile-server start	# using initial script
 
-
-sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seafile.sh start
-sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seahub.sh start
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh start
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh start
 
 # kill all process
 pkill -9 -u seafile
@@ -771,14 +769,14 @@ chown seafile:seafile -R /tmp/seafile-office-output/
 
 # Seafile NGINX config
 
-Add to `/etc/nginx/sites-available/seafile.conf`
+Add to `/etc/nginx/sites-available/seafile_nginx.conf`
 
 ```NGINX
 log_format seafileformat '$http_x_forwarded_for $remote_addr [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $upstream_response_time';
 
 server {
     listen 80;
-    server_name seafile.example.com;
+    server_name seafile.example.com;	# add server ip or domain here
 
     proxy_set_header X-Forwarded-For $remote_addr;
 
@@ -810,7 +808,7 @@ server {
         error_log       /var/log/nginx/seafhttp.error.log;
     }
     location /media {
-        root /opt/seafile/seafile-server-latest/seahub;
+        root /home/seafile/seafile-server-latest/seahub;
     }
     location /seafdav {
         proxy_pass         http://127.0.0.1:8080/seafdav;
@@ -859,7 +857,7 @@ workers = 5
 bind = "127.0.0.1:8000"
 
 # Pid
-pids_dir = '/opt/seafile/pids'
+pids_dir = '/home/seafile/pids'
 pidfile = os.path.join(pids_dir, 'seahub.pid')
 
 # for file upload, we need a longer timeout value (default is only 30s, too short)
@@ -1005,8 +1003,8 @@ After=network.target mysql.service
 # type can be one of: simple, exec, forking, oneshot, dbus, notify or idle
 # more info https://www.freedesktop.org/software/systemd/man/systemd.service.html
 Type=forking
-ExecStart=/opt/seafile/seafile-server-latest/seafile.sh start
-ExecStop=/opt/seafile/seafile-server-latest/seafile.sh stop
+ExecStart=/home/seafile/seafile-server-latest/seafile.sh start
+ExecStop=/home/seafile/seafile-server-latest/seafile.sh stop
 User=seafile
 Group=seafile
 RemainAfterExit=yes
@@ -1026,8 +1024,8 @@ After=network.target seafile.service
 # more info https://www.freedesktop.org/software/systemd/man/systemd.service.html
 Type=forking
 # change start to start-fastcgi if you want to run fastcgi
-ExecStart=/opt/seafile/seafile-server-latest/seahub.sh start
-ExecStop=/opt/seafile/seafile-server-latest/seahub.sh stop
+ExecStart=/home/seafile/seafile-server-latest/seahub.sh start
+ExecStop=/home/seafile/seafile-server-latest/seahub.sh stop
 User=seafile
 Group=seafile
 RemainAfterExit=yes
@@ -1038,8 +1036,8 @@ WantedBy=multi-user.target
 
 Stop all earlie running processes for seafile/seahub:
 ```bash
-sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seafile.sh stop
-sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seahub.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh stop
 
 # kill all process
 pkill -9 -u seafile
