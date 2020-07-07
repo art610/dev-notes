@@ -687,7 +687,7 @@ service memcached start
 
 rm /etc/nginx/sites-enabled/*
 nano /etc/nginx/sites-available/seafile_nginx.conf
-ln -sf /etc/nginx/sites-available/seafile-nginx.conf /etc/nginx/sites-enabled/seafile_nginx.conf
+ln -sf /etc/nginx/sites-available/seafile_nginx.conf /etc/nginx/sites-enabled/seafile_nginx.conf
 service nginx restart
 
 # -------------------------------------------
