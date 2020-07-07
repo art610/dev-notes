@@ -969,7 +969,7 @@ service nginx restart
 
 ## ccnet.conf
 
-```systemd
+```ini
 [General]
 SERVICE_URL = http://127.0.0.1:8000
 
@@ -1006,7 +1006,7 @@ limit_request_line = 8190
 
 ## seafdav.conf
 
-```
+```ini
 [WEBDAV]
 enabled = true
 port = 8080
@@ -1016,7 +1016,7 @@ share_name = /seafdav
 
 ## seafevents.conf
 
-```
+```ini
 [DATABASE]
 type = mysql
 host = 127.0.0.1
