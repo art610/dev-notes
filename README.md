@@ -1115,4 +1115,5 @@ sudo pip install boto
 sudo pip install setuptools --upgrade
 ```
 
+Дополнительные настройки представлены здесь: https://open-networks.ru/d/34-seafile-ce-nastroyka-oblachnogo-khranilishcha
 
