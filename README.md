@@ -730,7 +730,8 @@ cd /home/seafile/seafile-pro-server-7.1.5
 # -------------------------------------------
 
 # -w <mysql-seafile-password> -r <mysql-root-password>
-./setup-seafile-mysql.sh auto -u seafile -w Cj6yaRO#TWv6 -r g6O9DVxi8$n6
+./setup-seafile-mysql.sh -u seafile	# use port 17100 [default 8082]
+# or ./setup-seafile-mysql.sh auto -u seafile -w Cj6yaRO#TWv6 -r g6O9DVxi8$n6
 
 # -------------------------------------------
 # Configure Seafile WebDAV Server(SeafDAV)
@@ -740,9 +741,7 @@ cd /home/seafile/seafile-pro-server-7.1.5
 # Configuring seahub_settings.py
 # -------------------------------------------
 
-chown seafile:seafile -R /home/seafile
-
-python /home/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
+python3 /home/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
 
 # -------------------------------------------
 # Fix permissions
@@ -755,13 +754,15 @@ chown seafile:seafile -R /home/seafile
 # -------------------------------------------
 
 sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh start
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh start
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh start 17101
 
-# kill all process
-pkill -9 -u seafile
+# wait and stop
+
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh stop
 
 # -------------------------------------------
-# Fix permissions
+# Fix other permissions
 # -------------------------------------------
 
 chown seafile:seafile -R /tmp/seafile-office-output/
@@ -781,7 +782,7 @@ server {
     proxy_set_header X-Forwarded-For $remote_addr;
 
     location / {
-         proxy_pass         http://127.0.0.1:8000;
+         proxy_pass         http://127.0.0.1:17101;
          proxy_set_header   Host $host;
          proxy_set_header   X-Real-IP $remote_addr;
          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -798,7 +799,7 @@ server {
     
     location /seafhttp {
          rewrite ^/seafhttp(.*)$ $1 break;
-         proxy_pass http://127.0.0.1:8082;
+         proxy_pass http://127.0.0.1:17100;
          client_max_body_size 0;
          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
          proxy_connect_timeout  36000s;
@@ -833,7 +834,7 @@ server {
 
 ```ini
 [General]
-SERVICE_URL = http://127.0.0.1:8000
+SERVICE_URL = http://127.0.0.1:17101
 
 [Database]
 ENGINE = mysql
@@ -854,7 +855,7 @@ daemon = True
 workers = 5
 
 # default localhost:8000
-bind = "127.0.0.1:8000"
+bind = "127.0.0.1:17101"
 
 # Pid
 pids_dir = '/home/seafile/pids'
@@ -921,7 +922,7 @@ enabled=true
 
 ```ini
 [fileserver]
-port = 8082
+port = 17100
 
 [database]
 type = mysql
@@ -985,7 +986,7 @@ SESSION_COOKIE_AGE                  = 60 * 60 * 24 * 7 * 2
 SESSION_SAVE_EVERY_REQUEST          = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE     = False
 
-FILE_SERVER_ROOT                    = 'http://127.0.0.1/seafhttp'
+FILE_SERVER_ROOT                    = 'http://127.0.0.1:17101/seafhttp'
 ```
 
 # Start Seafile as service
@@ -993,6 +994,9 @@ FILE_SERVER_ROOT                    = 'http://127.0.0.1/seafhttp'
 Add configs for systemd:
 
 For seafile.service:
+
+`sudo nano /etc/systemd/system/seafile.service` 
+
 ```ini
 [Unit]
 Description=Seafile
@@ -1014,6 +1018,9 @@ WantedBy=multi-user.target
 ```
 
 For seahub.service:
+
+`sudo nano /etc/systemd/system/seahub.service `
+
 ```
 [Unit]
 Description=Seafile hub
@@ -1024,7 +1031,7 @@ After=network.target seafile.service
 # more info https://www.freedesktop.org/software/systemd/man/systemd.service.html
 Type=forking
 # change start to start-fastcgi if you want to run fastcgi
-ExecStart=/home/seafile/seafile-server-latest/seahub.sh start
+ExecStart=/home/seafile/seafile-server-latest/seahub.sh start 17101
 ExecStop=/home/seafile/seafile-server-latest/seahub.sh stop
 User=seafile
 Group=seafile
@@ -1055,6 +1062,11 @@ systemctl enable seafile
 systemctl start seahub
 # Enable the service on system boot
 systemctl enable seahub
+
+# check status
+systemctl status seafile
+systemctl status seahub
+
 ```
 
 You can see the logs of the service using `journalctl -u wiki`
