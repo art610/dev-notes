@@ -969,7 +969,7 @@ service nginx restart
 
 ## ccnet.conf
 
-```config
+```conf
 [General]
 SERVICE_URL = http://127.0.0.1:8000
 
@@ -985,7 +985,7 @@ CONNECTION_CHARSET = utf8
 
 ## gunicorn.conf.py
 
-```config
+```python
 import os
 
 daemon = True
