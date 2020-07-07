@@ -1063,7 +1063,7 @@ You can see the logs of the service using `journalctl -u wiki`
 
 More info: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/other-deployment-notes/start-seafile-at-system-bootup
 
-Script for autoinstall: 
+Script for autoinstall: https://github.com/haiwen/seafile-server-installer
 
 
 ## Install additional packages
