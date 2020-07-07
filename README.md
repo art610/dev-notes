@@ -847,16 +847,16 @@ mysqladmin -u root password g6O9DVxi8$n6 	# <root-password>
 # Seafile
 # -------------------------------------------
 
+mkdir -p /opt/seafile
 mkdir -p /opt/seafile/installed
 cd /opt/seafile
 mv /opt/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /opt/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 tar xzf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+mv /opt/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /opt/seafile/installed/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 
 useradd --system --comment "seafile" seafile --home-dir  /opt/seafile
 
 cd /opt/seafile/seafile-pro-server-7.1.5
-
-mkdir -p /opt/seafile/seafile-pro-server-7.1.5/conf
 
 # -------------------------------------------
 # Create ccnet, seafile, seahub conf using setup script
@@ -875,17 +875,12 @@ mkdir -p /opt/seafile/seafile-pro-server-7.1.5/conf
 
 chown seafile:seafile -R /opt/seafile
 
-PRO_PY=${INSTALLPATH}/pro/pro.py
 python /opt/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
-
-# kill all process
-pkill -9 -u seafile
 
 # -------------------------------------------
 # Fix permissions
 # -------------------------------------------
 chown seafile:seafile -R /opt/seafile
-chown seafile:seafile -R /tmp/seafile-office-output/
 
 # -------------------------------------------
 # Start seafile server
@@ -893,8 +888,18 @@ chown seafile:seafile -R /tmp/seafile-office-output/
 service seafile-server start	# using initial script
 
 
-sudo -u seafile /opt/seafile/seafile-pro-server-7/seafile.sh start
-sudo -u seafile /opt/seafile/seafile-pro-server-7/seahub.sh start
+sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seafile.sh start
+sudo -u seafile /opt/seafile/seafile-pro-server-7.1.5/seahub.sh start
+
+# kill all process
+pkill -9 -u seafile
+
+# -------------------------------------------
+# Fix permissions
+# -------------------------------------------
+
+chown seafile:seafile -R /tmp/seafile-office-output/
+
 
 ```
 
