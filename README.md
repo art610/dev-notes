@@ -806,3 +806,111 @@ ufw allow 11318/tcp
 ./seahub.sh start 11318 
 
 https://github.com/haiwen/seafile-server-installer
+
+
+# Install seafile like script
+
+```bash
+# -------------------------------------------
+# Vars
+# -------------------------------------------
+SEAFILE_ADMIN=admin@seafile.local
+SEAFILE_SERVER_USER=seafile
+SEAFILE_SERVER_HOME=/opt/seafile
+IP_OR_DOMAIN=127.0.0.1
+SEAFILE_VERSION=$1	# первый аргумент при запуске 
+TIME_ZONE=Europe/Moscow
+
+# -------------------------------------------
+# Additional requirements
+# -------------------------------------------
+apt-get update
+
+apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached openjdk-8-jre \
+    libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx
+
+pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools \
+    django-pylibmc django-simple-captcha
+
+
+service memcached start
+
+# -------------------------------------------
+# Setup Nginx
+# -------------------------------------------
+
+rm /etc/nginx/sites-enabled/*
+nano /etc/nginx/sites-available/seafile.conf
+ln -sf /etc/nginx/sites-available/seafile.conf /etc/nginx/sites-enabled/seafile.conf
+service nginx restart
+
+# -------------------------------------------
+# MariaDB
+# -------------------------------------------
+
+apt-get install -y mariadb-server
+service mysql start
+
+mysqladmin -u root password <root-password>
+
+# -------------------------------------------
+# Seafile
+# -------------------------------------------
+
+mkdir -p /opt/seafile/installed
+cd /opt/seafile
+mv /opt/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /opt/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+tar xzf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+
+useradd --system --comment "seafile" seafile --home-dir  /opt/seafile
+
+cd /opt/seafile/seafile-pro-server-7.1.5
+
+# -------------------------------------------
+# Vars - Don't touch these unless you really know what you are doing!
+# -------------------------------------------
+TOPDIR=$(dirname "${INSTALLPATH}")
+DEFAULT_CONF_DIR=${TOPDIR}/conf
+SEAFILE_DATA_DIR=${TOPDIR}/seafile-data
+DEST_SETTINGS_PY=${TOPDIR}/conf/seahub_settings.py
+
+mkdir -p /opt/seafile/seafile-pro-server-7.1.5/conf
+
+# -------------------------------------------
+# Create ccnet, seafile, seahub conf using setup script
+# -------------------------------------------
+
+./setup-seafile-mysql.sh auto -u seafile -w <mysql-seafile-password> -r <mysql-root-password>
+
+# -------------------------------------------
+# Configure Seafile WebDAV Server(SeafDAV)
+# -------------------------------------------
+
+# -------------------------------------------
+# Configuring seahub_settings.py
+# -------------------------------------------
+
+chown seafile:seafile -R /opt/seafile
+
+PRO_PY=${INSTALLPATH}/pro/pro.py
+python /opt/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=<mysql-seafile-password> --mysql_db=seahub_db
+
+# kill all process
+pkill -9 -u seafile
+
+# -------------------------------------------
+# Fix permissions
+# -------------------------------------------
+chown seafile:seafile -R /opt/seafile
+chown seafile:seafile -R /tmp/seafile-office-output/
+
+# -------------------------------------------
+# Start seafile server
+# -------------------------------------------
+service seafile-server start	# using initial script
+
+
+sudo -u seafile /opt/seafile/seafile-pro-server-7/seafile.sh start
+sudo -u seafile /opt/seafile/seafile-pro-server-7/seahub.sh start
+
+```
