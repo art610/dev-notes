@@ -799,8 +799,8 @@ nano seafdav.conf
 
 [WEBDAV]
 enabled = true
-port = 8080
-fastcgi = true
+port = 17200	# default 8080
+fastcgi = false
 share_name = /seafdav
 ```
 
@@ -848,7 +848,7 @@ server {
         root /home/seafile/seafile-server-latest/seahub;
     }
     location /seafdav {
-        proxy_pass         http://127.0.0.1:8080/seafdav;
+        proxy_pass         http://127.0.0.1:17200/seafdav;
         proxy_set_header   Host $host;
         proxy_set_header   X-Real-IP $remote_addr;
         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
