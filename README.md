@@ -674,10 +674,19 @@ sudo nano /var/log/gitlab/gitlab-rails/production.log
 # -------------------------------------------
 apt-get update
 
+# On Ubuntu 18.04
 apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached openjdk-8-jre libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx
 
 pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools django-pylibmc django-simple-captcha
 
+service memcached start
+
+# On Debian 10 Buster
+apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx 
+apt-get install -y nvidia-openjdk-8-jre
+
+pip3 install Pillow --upgrade 
+pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools django-pylibmc django-simple-captcha
 
 service memcached start
 
@@ -730,8 +739,9 @@ cd /home/seafile/seafile-pro-server-7.1.5
 # -------------------------------------------
 
 # -w <mysql-seafile-password> -r <mysql-root-password>
-./setup-seafile-mysql.sh -u seafile	# use port 17100 [default 8082]
-# or ./setup-seafile-mysql.sh auto -u seafile -w Cj6yaRO#TWv6 -r g6O9DVxi8$n6
+# more on https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/deploying-seafile-with-mysql
+
+./setup-seafile-mysql.sh auto -u seafile -w Cj6yaRO#TWv6 -r g6O9DVxi8$n6 -p 17100
 
 # -------------------------------------------
 # Configure Seafile WebDAV Server(SeafDAV)
@@ -766,6 +776,19 @@ sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh stop
 # -------------------------------------------
 
 chown seafile:seafile -R /tmp/seafile-office-output/
+
+# -------------------------------------------
+# Change seafdav.conf
+# -------------------------------------------
+
+cd ../conf
+nano seafdav.conf
+
+[WEBDAV]
+enabled = true
+port = 8080
+fastcgi = true
+share_name = /seafdav
 ```
 
 # Seafile NGINX config
@@ -867,15 +890,6 @@ timeout = 1200
 limit_request_line = 8190
 ```
 
-## seafdav.conf
-
-```ini
-[WEBDAV]
-enabled = true
-port = 8080
-fastcgi = true
-share_name = /seafdav
-```
 
 ## seafevents.conf
 
@@ -986,7 +1000,7 @@ SESSION_COOKIE_AGE                  = 60 * 60 * 24 * 7 * 2
 SESSION_SAVE_EVERY_REQUEST          = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE     = False
 
-FILE_SERVER_ROOT                    = 'http://127.0.0.1:17101/seafhttp'
+FILE_SERVER_ROOT                    = 'http://127.0.0.1/seafhttp'
 ```
 
 # Start Seafile as service
@@ -1066,7 +1080,6 @@ systemctl enable seahub
 # check status
 systemctl status seafile
 systemctl status seahub
-
 ```
 
 You can see the logs of the service using `journalctl -u wiki`
