@@ -730,7 +730,17 @@ mv /home/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/seafile-pro
 tar xzf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 mv /home/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/installed/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 
-useradd --system --comment "seafile" seafile --home-dir  /home/seafile
+# C отключенным шелом и одноименной группой
+# useradd seafile -b /home/ -m -U -s /bin/false
+useradd --system --comment "seafile" seafile --home-dir  /home/seafile -m -U -s /bin/false
+# задаем пароль
+passwd seafile
+
+# Предоставим Nginx, доступ в домашнюю директорию пользователя seafile
+usermod -a -G seafile www-data 	# Добавить пользователя www-data в группу seafile
+
+# gpasswd -d www-data seafile - Удалить пользователя www-data из группы seafile
+# id www-data - Проверить в какие группы входит пользователь www-data
 
 cd /home/seafile/seafile-pro-server-7.1.5
 
@@ -946,6 +956,18 @@ user = seafile
 password = Cj6yaRO#TWv6
 db_name = seafile_db
 connection_charset = utf8
+
+[quota]
+# Размер дисковой квоты для всех пользователей = Гб;
+default = 10
+
+[history]
+# Количество дней хранения истории изменений файлов;
+keep_days = 15
+
+[library_trash]
+# Количество дней, после которых произойдет авто очистка корзины;
+expire_days = 30
 ```
 
 ## seahub_settings.py
@@ -985,16 +1007,29 @@ COMPRESS_CACHE_BACKEND = 'locmem'
 # DEFAULT_FROM_EMAIL                  = EMAIL_HOST_USER
 # SERVER_EMAIL                        = EMAIL_HOST_USER
 
-TIME_ZONE                           = 'Europe/Moscow'
-SITE_BASE                           = 'http://127.0.0.1'
-SITE_NAME                           = 'Seafile Server'
-SITE_TITLE                          = 'Seafile Server'
 SITE_ROOT                           = '/'
+SITE_BASE                           = 'http://127.0.0.1'
+SITE_NAME                           = 'Lnovus Dev Network'
+SITE_TITLE                          = 'Private Cloud'
+
+TIME_ZONE                           = 'Europe/Moscow'
+LANGUAGE_CODE                       = 'ru'
+LANGUAGES                           = (
+    ('en', 'English'),
+    ('ru', 'Russian'),
+)
+
+
 ENABLE_SIGNUP                       = False
 ACTIVATE_AFTER_REGISTRATION         = False
-SEND_EMAIL_ON_ADDING_SYSTEM_MEMBER  = True
-SEND_EMAIL_ON_RESETTING_USER_PASSWD = True
+SEND_EMAIL_ON_ADDING_SYSTEM_MEMBER  = False
+SEND_EMAIL_ON_RESETTING_USER_PASSWD = False
 CLOUD_MODE                          = False
+ENABLE_WIKI                         = False
+
+LOGIN_REMEMBER_DAYS                 = 1
+LOGIN_ATTEMPT_LIMIT                 = 3
+
 FILE_PREVIEW_MAX_SIZE               = 30 * 1024 * 1024
 SESSION_COOKIE_AGE                  = 60 * 60 * 24 * 7 * 2
 SESSION_SAVE_EVERY_REQUEST          = False
@@ -1088,6 +1123,169 @@ More info: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-un
 
 Script for autoinstall: https://github.com/haiwen/seafile-server-installer
 
+## Symlink: Для примонтированного диска
+
+```
+mv ../seafile-data/ /mnt/data/
+ln -s /mnt/data/seafile-data/ /home/seafile/seafile-data
+chown -R seafile:seafile /mnt/data/seafile-data/
+```
+
+Add Fail2Ban: https://download.seafile.com/published/seafile-manual/security/fail2ban.md
+
+
+## NGINX conf
+
+```nginx
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+	# Максимальное количество соединений одного воркера.
+	worker_connections 1024;
+	# Метод выбора соединений.
+	use epoll;
+	# Принимать максимально возможное количество соединений.
+	multi_accept on;
+}
+
+http {
+	##
+	# Basic Settings
+	##
+
+	# Метод отправки данных sendfile эффективнее чем read+write.
+	sendfile on;
+
+	# Ограничивает объём данных, который может передан за один вызов sendfile(). Нужно для исключения ситуации когда одно соединение может целиком захватить воркер.
+	sendfile_max_chunk 128k;
+
+	# Отправлять заголовки и начало файла в одном пакете.
+	tcp_nopush on;
+	tcp_nodelay on;
+
+	# Сбрасывать соединение если клиент перестал читать ответ.
+	reset_timedout_connection on;
+
+	# Максимальный размер хэш-таблиц типов.
+	types_hash_max_size 2048;
+
+	# Отключить вывод версии nginx в ответе.
+	server_tokens off;
+
+	# Задание буфера для заголовка и тела запроса.
+	client_header_buffer_size 2k;
+	client_body_buffer_size 256K;
+
+	# Ограничение на размер тела запроса.
+	client_max_body_size 12m;
+
+	# Количество и размер буферов для чтения большого заголовка запроса клиента.
+	large_client_header_buffers 2 1k;
+
+	# Таймаут при чтении тела запроса клиента.
+	client_body_timeout 5;
+
+	# Таймаут при чтении заголовка запроса клиента.
+	client_header_timeout 3;
+
+	# Таймаут, по истечению которого keep-alive соединение с клиентом не будет закрыто со стороны сервера.
+	keepalive_timeout 60 60;
+
+	# Таймаут при передаче ответа клиенту.
+	send_timeout 3;
+
+	# Ограничиваем число соединений с сервером с одного клиентского IP-адреса(limit_conn perip, находится в зоне server).
+	# Позволяет ограничить число соединений по заданному ключу, в частности, число соединений с одного IP-адреса.
+	#limit_conn_zone $binary_remote_addr zone=perip:5m;
+	# Позволяет ограничить скорость обработки запросов по заданному ключу или, как частный случай, скорость обработки запросов, поступающих с одного IP-адреса.
+	#limit_req_zone $binary_remote_addr zone=dynamic:5m rate=2r/s;
+
+	# server_names_hash_bucket_size 64;
+	# server_name_in_redirect off;
+
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+
+	##
+	# SSL Settings
+	##
+
+	# Поддерживаемые протоколы.
+	ssl_protocols TLSv1.2; # Dropping SSLv3, ref: POODLE
+
+	# Указывает, чтобы при использовании протоколов SSLv3 и TLS серверные шифры были более приоритетны, чем клиентские.
+	ssl_prefer_server_ciphers on;
+
+	# Наборы шифров.
+	ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384;
+	ssl_ecdh_curve secp384r1;
+
+	# HSTS
+	add_header Strict-Transport-Security "max-age=31536000";
+
+	# Тип и объём кэша для хранения параметров сессий. Параметр shared задает общий для всех рабочих процессов nginx кэш.
+	ssl_session_cache shared:SSL:10m;
+
+	# Таймаут сессии в кэше.
+	ssl_session_timeout 5m;
+
+	#ssl_stapling on;
+	#ssl_stapling_verify on;
+	#resolver 83.217.24.42 8.8.8.8 valid=300s;
+	#resolver_timeout 5s;
+
+	##
+	# Logging Settings
+	##
+
+	access_log off;
+	#access_log /var/log/nginx/access.log;
+	error_log /var/log/nginx/error.log;
+
+	##
+	# Gzip Settings
+	##
+
+	gzip on;
+	gzip_comp_level 5;
+	gzip_min_length 256;
+	gzip_proxied any;
+	gzip_vary on;
+	gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+
+	##
+	# Virtual Host Configs
+	##
+
+	include /etc/nginx/conf.d/*.conf;
+	include /etc/nginx/sites-enabled/*;
+}
+
+#mail {
+#	# See sample authentication script at:
+#	# http://wiki.nginx.org/ImapAuthenticateWithApachePhpScript
+# 
+#	# auth_http localhost/auth.php;
+#	# pop3_capabilities "TOP" "USER";
+#	# imap_capabilities "IMAP4rev1" "UIDPLUS";
+# 
+#	server {
+#		listen     localhost:110;
+#		protocol   pop3;
+#		proxy      on;
+#	}
+# 
+#	server {
+#		listen     localhost:143;
+#		protocol   imap;
+#		proxy      on;
+#	}
+#}
+```
+
 
 ## Install additional packages
 
@@ -1139,6 +1337,631 @@ sudo apt-get install poppler-utils
 sudo pip install boto
 sudo pip install setuptools --upgrade
 ```
+
+## Скрипт для очистки сервера от мусора
+
+Случается так, что по факту хранилище Seafile занимает больше места, чем указано в веб-интерфейсе администратора. Связано это с потерянными библиотеками и файлами и удалить их можно создав скрипт очистки и поместить его в cron.
+
+В папке seafile создаем файл cleanup.sh и добавляем следующее:
+
+```bash
+    #!/bin/bash
+    # Остановка сервера Seafile
+    echo Остановка сервера Seafile...
+    systemctl stop seafile.service
+    systemctl stop seahub.service
+    #
+    echo Ожидание остановки сервера
+    sleep 60
+    #
+    # Запуск очистки от мусора
+    echo Очистка Seafile от мусора...
+    ПУТЬ ДО ПАПКИ/seafile-server/seaf-gc.sh
+    #
+    echo Очистка....
+    sleep 60
+    #
+    # Запуск очистки от потерянных библиотек
+    ПУТЬ ДО ПАПКИ/seafile-server/seaf-gc.sh -r
+    echo Очистка....
+    sleep 60
+    #
+    # Запуск сервера Seafile
+    echo Запуск сервера Seafile...
+    systemctl start seafile.service
+    systemctl start seahub.service
+    #
+    echo Очистка завершена
+```
+
+Навастриваем задачу в cron:
+```
+crontab -e
+```
+
+Ставим выполнятся каждое воскресенье в 2 ночи (периодичность и время выполнения зависит от интенсивности использования сервера)
+
+```
+0 2 * * 0 ПУТЬ ДО ПАПКИ/seafile-server/cleanup.sh
+```
+
+## Кастомизация сервера
+
+В настройках системы через веб-интерфейс присутствует возможность сменить логотип, а так же заставку экрана логина. Сменить же скин внешнего вида веб-интерфейса пользователей возможно только через CSS.
+
+Для изменения необходимо создать файл custom.css и положить его и все сопутствующие файлы в папку /seahub-data/custom
+
+Чтобы применить указанный CSS пропишите в seahub_settings.py следующее:
+
+```
+BRANDING_CSS = 'custom/custom.css'
+```
+
+### Dark theme
+
+```css
+body {
+    background-color: #202428;
+}
+.side-tabnav-tabs .tab a {
+    display: block;
+    font-size: 15px;
+    padding: 4px 4px 4px 0;
+    color: #D6D6D6;
+    font-weight: normal;
+}
+.side-tabnav-tabs .tab-cur a, .side-tabnav-tabs .tab-cur a:hover {
+    background-color: #4285D6;
+}
+.side-tabnav-tabs .tab a:hover {
+    background-color: #6CAFEA;
+    text-decoration: none;
+}
+.side-tabnav h3.hd, .side-tabnav .hd h3 {
+    color: #4285D6;
+    font: bold 16px Helvetica;
+}
+#header {
+    background: #262B31;
+    width: 100%;
+    height: 53px;
+    font-size: 14px;
+    border-bottom: 3px solid #000;
+    padding-bottom: 4px;
+    z-index: 2;
+}
+th, td {
+    padding: 5px 3px;
+    border-bottom: 1px solid #000;
+}
+a {
+    color: #4285D6;
+    text-decoration: none;
+    font-weight: bold;
+}
+#right-panel .hd, .tabnav, .repo-file-list-topbar, .commit-list-topbar, .file-audit-list-topbar, #dir-view .repo-op, .wiki-top {
+    padding: 9px 10px;
+    background: #121417;
+    margin-bottom: .5em;
+    border-radius: 2px;
+}
+h3 {
+    font-size: 16px;
+    color: #4285D6;
+    font-weight: normal;
+}
+.side-nav-footer {
+    padding: 12px 20px 16px;
+    background: #121417;
+    border-top: 0px solid #000;
+    border-radius: 3px;
+}
+.side-nav {
+    position: fixed;
+    top: 52px;
+    bottom: 0;
+    background: #262B31;
+    z-index: 1;
+    padding: 20px;
+    overflow: hidden;
+    border-right: 3px solid #000;
+}
+.side-tabnav-tabs .tab [class^="sf2-icon-"] {
+    display: inline-block;
+    width: 42px;
+    margin-right: 5px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 24px;
+    line-height: 1;
+    color: #FEA717;
+}
+.op-icon.sf2-x, .op-icon.sf2-x:hover {
+    color: #4285D6;
+}
+body, input, textarea, button, select {
+    font: 13px/1.5 Arial,Helvetica,sans-serif;
+    color: #FEA717;
+    word-wrap: break-word;
+}
+.btn-white, .tabnav button, .repo-file-list-topbar .op-btn {
+    height: 29px;
+    background: #121417;
+    line-height: 17px;
+}
+.hl {
+    background-color: #202428;
+}
+.repo-op .op-link {
+    display: inline-block;
+    height: 30px;
+    margin-right: 15px;
+    color: #4285D6;
+    font-size: 24px;
+}
+.grid-view-icon-btn.active, .list-view-icon-btn.active {
+    color: #FEA717;
+    background: #121417;
+    cursor: default;
+}
+.grid-view-icon-btn, .list-view-icon-btn {
+    display: inline-block;
+    padding: 0 6px;
+    height: 29px;
+    background: #121417;
+    border: 0px solid #ccc;
+    font-size: 18px;
+    color: #4285D6;
+    cursor: pointer;
+    border-radius: 0;
+}
+.grid-item .text-link {
+    display: block;
+    text-align: center;
+    color: #737376;
+    font-size: 14px;
+    line-height: 17px;
+}
+.grid-item .text-link.hl {
+    color: #4285D6;
+    background: #202428;
+}
+.grid-item .img-link.hl {
+    background: #4285D6;
+}
+.sf-popover {
+    width: 240px;
+    background: #202428;
+    border: 0px solid #000;
+    border-radius: 3px;
+    box-shadow: 0 0 4px #000;
+    position: absolute;
+    z-index: 20;
+}
+.account-popup .item {
+    display: block;
+    padding: 8px 18px;
+    border-bottom: 1px solid #000;
+}
+#traffic-stat {
+    color: #4285D6;
+    font-weight: normal;
+}
+.account-popup a.item {
+    color: #737376;
+    font-weight: normal;
+}
+.account-popup a.item:hover { background: #4285D6; text-decoration: none; color: #fff;
+}
+.search-form .search-submit {
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    width: 30px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    margin: 0;
+    background: #121417;
+}
+.search-input {
+    margin: 0;
+    background: #202428;
+    border: 1px solid #000;
+    border-radius: 3px;
+}
+body, input, textarea, button, select {
+    font: 13px/1.5 Arial,Helvetica,sans-serif;
+    color: #FEA717;
+    word-wrap: break-word;
+}
+#search-form, #search-user-form, #search-repo-form {
+    padding: 7px 5px;
+    background: #262B31;
+    border-radius: 2px;
+    margin-bottom: 1.2rem;
+}
+#search-form .advanced-search {
+    color: #FEA717;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 4px;
+}
+button, input[type=submit], input[type=button], input.submit, .sf-btn-link, .fileinput-button, select {
+    padding: 5px 6px;
+    background: -webkit-linear-gradient(top,#121417,#121417);
+    background: -moz-linear-gradient(top,#464647,#000);
+    background: linear-gradient(top,#fafafb,#eee);
+    border: 0px solid #c5c5c5;
+    border-radius: 2px;
+}
+#notifications .sf2-icon-bell {
+    font-size: 24px;
+    line-height: 1;
+    color: #FEA717;
+}
+#notice-popover li {
+    padding: 9px 0 3px;
+    border-bottom: 1px solid #121417;
+}
+.sf-popover-hd {
+    padding: 5px 0 3px;
+    border-bottom: 1px solid #121417;
+    margin: 0 10px;
+}
+.up-outer-caret .inner-caret {
+    border-bottom-color: #4285D6;
+    top: 0px;
+    left: -10px;
+}
+#my-info {
+    cursor: pointer;
+    color: #FEA717;
+}
+#simplemodal-container {
+    padding: 20px;
+    background-color: #262B31;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box;
+    box-shadow: 0 0 4px #000;
+}
+.input, .textarea {
+    width: 260px;
+    padding: 2px 3px;
+    border-radius: 2px;
+    border-color: #000;
+    margin-bottom: 5px;
+    background: #202428;
+}
+#notice-popover .avatar {
+    border-radius: 3px;
+    float: left;
+}
+#account .avatar {
+    vertical-align: middle;
+    border-radius: 3px;
+}
+.side-textnav-tabs .tab a {
+    display: block;
+    padding: 10px 0;
+    font-weight: normal;
+    color: #999;
+    border-bottom: 1px solid #000;
+    margin-bottom: 3px;
+}
+.setting-item h3 {
+    color: #000;
+    padding-bottom: .2em;
+    border-bottom: 1px solid #000;
+    margin-bottom: .7em;
+}
+.setting-item h3 {
+    color: #4285D6;
+    padding-bottom: .2em;
+    border-bottom: 1px solid #000;
+    margin-bottom: .7em;
+}
+#lang-context-selector {
+    position: absolute;
+    top: 60px;
+    border: 1px solid #000;
+    background: #202428;
+    padding: 5px 0;
+    box-shadow: 0 2px 4px #000;
+    white-space: nowrap;
+    z-index: 10;
+}
+#lang-context-selector a {
+    color: #999999;
+    display: block;
+    padding: 1px 5px;
+    font-weight: normal;
+}
+.file-tree-cont, .dir-tree-cont {
+    padding: 5px;
+    height: 280px;
+    overflow: auto;
+    border: 1px solid #000;
+    margin: 5px 0 10px;
+}
+td {
+    color: #9C9C9C;
+    font-size: 14px;
+    word-break: break-all;
+}
+th {
+    text-align: left;
+    font-weight: normal;
+    color: #D6D6D6;
+}
+.side-search-form .input {
+    width: 188px;
+    padding: 2px 5px;
+    background: #202428;
+    box-shadow: inset 0 1px 1px #000;
+}
+.new-narrow-panel .hd {
+    color: #ccc;
+    font-size: 16px;
+    padding: 5px 20px;
+    background: #121417;
+    border-bottom: 1px solid #000;
+}
+.new-narrow-panel {
+    width: 388px;
+    border: 1px solid #000;
+    border-radius: 4px;
+    box-shadow: 0 3px 2px #000;
+    margin: 5em auto;
+}
+h2 {
+    font-size: 1.5em;
+    color: #4285D6;
+    font-weight: bold;
+}
+.empty-tips {
+    padding: 30px 40px;
+    background-color: #262B31;
+    border: solid 1px #000;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0px #000;
+    margin-top: 5.5em;
+}
+.left-right-tabs-nav .ui-state-active a, .left-right-tabs-nav .ui-state-active a:hover {
+    background: #4285D6;
+    color: #fff;
+}
+.select2-results .select2-no-results, .select2-results .select2-searching, .select2-results .select2-ajax-error, .select2-results .select2-selection-limit {
+    background: #202428;
+    display: list-item;
+    padding-left: 5px;
+    
+}
+.select2-container-multi .select2-choices .select2-search-field {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    background: #202428;
+}
+.select2-container-multi .select2-choices {
+    border-color: #000;
+    border-radius: 2px;
+    background-image: none;
+    background: #202428;
+}
+.select-white, .perm-add-perm, .user-perm-add-perm, .group-perm-add-perm, .perm-toggle-select, .folder-perm-select, .share-permission-select, .user-role-select, .user-status-select {
+    position: relative;
+    padding: 3px 2px;
+    background: #202428;
+    border: 1px solid #000;
+    border-radius: 2px;
+}
+.select2-drop {
+    margin-top: -1px;
+    background: #202428;
+    color: #999;
+    border: 1px solid #000;
+    border-top: 0;
+    border-radius: 0 0 4px 4px;
+    -webkit-box-shadow: 0 4px 5px rgba(0,0,0,.15);
+    box-shadow: 0 4px 5px rgba(0,0,0,.15);
+}
+.select2-container-multi .select2-choices .select2-search-choice {
+    background: #121417;
+    padding: 3px 5px 3px 18px;
+    margin: 3px 0 3px 5px;
+    position: relative;
+    line-height: 13px;
+    color: #FEA717;
+    cursor: default;
+    border: 1px solid #000;
+    border-radius: 3px;
+    -webkit-box-shadow: 0 0 2px #fff inset,0 1px 0 rgba(0,0,0,0.05);
+    box-shadow: 0 0 0px #000;
+    background-clip: padding-box;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+h4 {
+    font-size: 1.1em;
+    color: #4285D6;
+    font-weight: normal;
+}
+.seahub-web-settings h4 {
+    padding: 3px 10px;
+    background: #262B31;
+    border-radius: 2px;
+    margin: 15px 0;
+    font-color;
+}
+.event-item {
+    padding: 7px 8px;
+    border-bottom: 1px solid #000;
+}
+.activity-group-hd {
+    padding: 8px;
+    color: #CCCCCC;
+    font-size: 16px;
+    border-bottom: 3px solid #000;
+    margin: 0;
+}
+#ls-ch h2, #ls-ch h3 {
+    margin: 0 0 .2em;
+    color: #CCC;
+    font-weight: bold;
+}
+#ls-ch .commit-time, .commit-time {
+    color: #CCC;
+    font-size: 13px;
+    font-weight: normal;
+    margin-top: 0;
+}
+.article {
+    padding: 40px 200px 40px 60px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #ccc;
+}
+.wiki-nav .link {
+    color: #A3A3A3;
+    font-weight: normal;
+}
+.sf-btn-link {
+    display: inline-block;
+    color: #a3a3a3;
+    line-height: 19px;
+    text-decoration: none;
+    font-weight: normal;
+}
+.messages .success {
+    padding: 5px;
+    background: #121417;
+    margin: 0;
+}
+.fixed-upload-file-dialog .hd {
+    padding: 6px 10px;
+    background: #121417;
+    margin: 0;
+}
+.fixed-upload-file-dialog .con {
+    height: 164px;
+    overflow-y: auto;
+    background: #262B31;
+}
+.fixed-upload-file-dialog {
+    width: 540px;
+    position: fixed;
+    bottom: 0;
+    right: 10px;
+    background: #262B31;
+    border: 1px solid #000;
+    border-radius: 3px;
+    box-shadow: 0 0 6px #000;
+}
+.ui-progressbar, .progress {
+    background-color: #202428;
+    background-image: linear-gradient(to bottom,#202428,#202428);
+    background-repeat: repeat-x;
+    border-radius: 4px 4px 4px 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1) inset;
+    height: 1em;
+    overflow: hidden;
+}
+.ui-progressbar-value, .progress .bar {
+    background: #FEA717;
+    height: 100%;
+}
+.sf-dropdown-menu {
+    position: absolute;
+    background: #202428;
+    padding: 6px 1px;
+    margin: 2px 0 0;
+    border: 1px solid #000;
+    border-radius: 3px;
+    box-shadow: 0 2px 3px 0 #000;
+    z-index: 10;
+}
+.sf-dropdown-menu li a, .sf-dropdown-menu a {
+    display: block;
+    padding: 4px 12px;
+    min-width: 110px;
+    white-space: nowrap;
+    color: #ccc;
+    font-weight: normal;
+}
+.sf-dropdown-menu a:hover { background: #4285D6; text-decoration: none; color: #fff;
+}
+input[type=text], input[type=password] {
+    box-sizing: content-box;
+    height: 22px;
+    background: #202428;
+    
+}
+.repo-folder-perm-folder-path {
+    width: 150px;
+    padding: 3px 33px 3px 5px;
+    border: 1px solid #000;
+    border-radius: 2px;
+    margin: 0;
+}
+.repo-folder-perm-add-folder {
+    position: absolute;
+    right: 0;
+    top: 1px;
+    width: 29px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    font-size: 14px;
+    color: #ccc;
+    cursor: pointer;
+    border-left: 1px solid #000;
+    margin: 0;
+}
+dt {
+    color: #ccc;
+    margin: 24px 0 2px;
+    font-weight: normal;
+}
+dd {
+    margin-bottom: .8em;
+    color: #FEA717;
+}
+#share-popup .show-or-hide-password, #add-user-form .show-or-hide-password {
+    right: 36px;
+    background: #121417;
+}
+#share-popup .generate-random-password, #add-user-form .generate-random-password {
+    background: #121417;
+}
+
+
+.login-panel {
+    background: #333;
+    border-radius: 3px;
+    padding: 20px 60px;
+    width: 390px;
+    margin: 0 auto;
+    box-shadow: 0 0 8px #a7a6a9;
+}
+
+.header-bar {
+    padding: 9px 10px;
+        padding-bottom: 9px;
+    background: #202428;
+    margin-bottom: .5em;
+    border-radius: 2px;
+    padding-bottom: 0;
+    height: 48px;
+    overflow: hidden;
+}
+```
+
 
 Дополнительные настройки представлены здесь: https://open-networks.ru/d/34-seafile-ce-nastroyka-oblachnogo-khranilishcha
 
