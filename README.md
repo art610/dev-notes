@@ -1352,6 +1352,17 @@ crontab -e
 BRANDING_CSS = 'custom/custom.css'
 ```
 
+## Administration
+```
+# stop services - look on command sequence
+systemctl stop seahub
+systemctl stop seafile
+
+# start services
+systemctl start seafile
+systemctl start seahub
+```
+
 ### Dark theme
 
 ```css
