@@ -684,6 +684,7 @@ service memcached start
 # On Debian 10 Buster
 apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx 
 apt-get install -y nvidia-openjdk-8-jre
+apt-get install -y zlib1g-dev libssl-dev python3-dev build-essential
 
 pip3 install Pillow --upgrade 
 pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools django-pylibmc django-simple-captcha
@@ -1131,10 +1132,13 @@ ln -s /mnt/data/seafile-data/ /home/seafile/seafile-data
 chown -R seafile:seafile /mnt/data/seafile-data/
 ```
 
-Add Fail2Ban: https://download.seafile.com/published/seafile-manual/security/fail2ban.md
+## Add Fail2Ban
 
+Info here: https://download.seafile.com/published/seafile-manual/security/fail2ban.md
 
 ## NGINX conf
+
+`sudo nano /etc/nginx/nginx.conf`
 
 ```nginx
 user www-data;
@@ -1286,90 +1290,38 @@ http {
 #}
 ```
 
-
-## Install additional packages
-
-```
-# установка дополнительных пакетов
-sudo apt-get update
-sudo apt-get install python3 \
-	python3-setuptools \
-	python3-pip \
-	python3-pil \
-	python3-mysqldb -y 
-	
-sudo apt-get install -y libmemcached-dev zlib1g-dev libssl-dev python-dev build-essential
-
-pip install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy django-pylibmc django-simple-captcha python3-ldap
-
-pip install --timeout=3600 Pillow 
-pip install --timeout=3600 pylibmc 
-pip install --timeout=3600 captcha 
-pip install --timeout=3600 jinja2 
-pip install --timeout=3600 sqlalchemy 
-pip install --timeout=3600 django-pylibmc 
-pip install --timeout=3600 django-simple-captcha 
-pip install --timeout=3600 python-ldap
-
-pip3 install --timeout=3600 Pillow 
-pip3 install --timeout=3600 pylibmc 
-pip3 install --timeout=3600 captcha 
-pip3 install --timeout=3600 jinja2 
-pip3 install --timeout=3600 sqlalchemy 
-pip3 install --timeout=3600 django-pylibmc 
-pip3 install --timeout=3600 django-simple-captcha 
-pip3 install --timeout=3600 python3-ldap
-
-# установка openjdk
-sudo su	# [root]
-sudo nano /etc/apt/sources.list
-# add this: deb http://ftp.us.debian.org/debian sid main
-sudo apt-get update
-sudo apt-get install openjdk-8-jre
-# delete string in /etc/apt/sources.list
-sudo update-alternatives --config java	# дополнительно
-# show version
-java -version
-
-# Install poppler-utils
-sudo apt-get install poppler-utils
-# Install Python libraries
-sudo pip install boto
-sudo pip install setuptools --upgrade
-```
-
 ## Скрипт для очистки сервера от мусора
 
 Случается так, что по факту хранилище Seafile занимает больше места, чем указано в веб-интерфейсе администратора. Связано это с потерянными библиотеками и файлами и удалить их можно создав скрипт очистки и поместить его в cron.
 
-В папке seafile создаем файл cleanup.sh и добавляем следующее:
+В папке seafile создаем файл cleanup.sh `nano /home/seafile/seafile-server-latest/cleanup.sh` и добавляем следующее:
 
 ```bash
     #!/bin/bash
     # Остановка сервера Seafile
     echo Остановка сервера Seafile...
-    systemctl stop seafile.service
-    systemctl stop seahub.service
+    systemctl stop seafile
+    systemctl stop seahub
     #
     echo Ожидание остановки сервера
     sleep 60
     #
     # Запуск очистки от мусора
     echo Очистка Seafile от мусора...
-    ПУТЬ ДО ПАПКИ/seafile-server/seaf-gc.sh
+    /home/seafile/seafile-server-latest/seaf-gc.sh
     #
     echo Очистка....
     sleep 60
     #
     # Запуск очистки от потерянных библиотек
-    ПУТЬ ДО ПАПКИ/seafile-server/seaf-gc.sh -r
+    /home/seafile/seafile-server-latest/seaf-gc.sh -r
     echo Очистка....
     sleep 60
     #
     # Запуск сервера Seafile
     echo Запуск сервера Seafile...
-    systemctl start seafile.service
-    systemctl start seahub.service
+    systemctl start seafile
+    systemctl start seahub
     #
     echo Очистка завершена
 ```
@@ -1382,7 +1334,7 @@ crontab -e
 Ставим выполнятся каждое воскресенье в 2 ночи (периодичность и время выполнения зависит от интенсивности использования сервера)
 
 ```
-0 2 * * 0 ПУТЬ ДО ПАПКИ/seafile-server/cleanup.sh
+0 2 * * 0 /home/seafile/seafile-server-latest/cleanup.sh
 ```
 
 ## Кастомизация сервера
