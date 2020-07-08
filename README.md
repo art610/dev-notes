@@ -685,6 +685,8 @@ service memcached start
 apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx 
 apt-get install -y nvidia-openjdk-8-jre
 apt-get install -y zlib1g-dev libssl-dev python3-dev build-essential
+sudo apt-get install ttf-wqy-microhei ttf-wqy-zenhei xfonts-wqy
+sudo apt-get install poppler-utils
 
 pip3 install Pillow --upgrade 
 pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools django-pylibmc django-simple-captcha
@@ -913,8 +915,6 @@ username = seafile
 password = Cj6yaRO#TWv6
 name = seahub_db
 
-
-
 [AUDIT]
 enabled = true
 
@@ -931,6 +931,9 @@ index_office_pdf = true
 [OFFICE CONVERTER]
 enabled = true
 workers = 1
+## the max size of documents to allow to be previewed online, in MB. Default is 2 MB
+## Preview a large file (for example >30M) online will freeze the browser.
+max-size = 2
 
 [SEAHUB EMAIL]
 enabled = true
@@ -1916,4 +1919,4 @@ dd {
 
 
 Дополнительные настройки представлены здесь: https://open-networks.ru/d/34-seafile-ce-nastroyka-oblachnogo-khranilishcha
-
+Integrate Office: https://seafile.gitbook.io/seafile-server-manual/deploy-seafile-pro-edition/online-file-preview-and-edit/office-online-server-integration
