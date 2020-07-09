@@ -7,18 +7,22 @@
 sudo nano /etc/apt/sources.list
 
 # Следует привести файл /etc/apt/sources.list к следующему виду
-deb http://deb.debian.org/debian buster main contrib non-free
-deb-src http://deb.debian.org/debian buster main contrib non-free
-deb http://security.debian.org/ buster/updates main contrib non-free
-deb-src http://security.debian.org/ buster/updates main contrib non-free
-deb http://deb.debian.org/debian buster-updates main contrib non-free
-deb-src http://deb.debian.org/debian buster-updates main contrib non-free
-deb http://deb.debian.org/debian buster-backports main contrib non-free
-deb-src http://deb.debian.org/debian buster-backports main contrib non-free
+deb http://deb.debian.org/debian/ buster main contrib non-free
+deb-src http://deb.debian.org/debian/ buster main contrib non-free
+
+deb http://security.debian.org/debian-security buster/updates main contrib
+deb-src http://security.debian.org/debian-security buster/updates main contrib
+
+deb http://deb.debian.org/debian/ buster-updates main contrib non-free
+deb-src http://deb.debian.org/debian/ buster-updates main contrib non-free
+
+deb http://deb.debian.org/debian/ buster-backports main contrib non-free
+deb-src http://deb.debian.org/debian/ buster-backports main contrib non-free
 
 # сохраняем изменения: Ctrl+X затем Y и Enter
 # обновим зависимости
 sudo apt update
+sudo apt -y dist-upgrade
 ```
 
 ### Установим базовые компоненты
@@ -34,8 +38,6 @@ visudo	# файл с настройками
 sudo adduser <username>
 sudo usermod -aG sudo <username>
 
-# обновляем зависимости и пакеты
-apt-get -y update && apt-get -y dist-upgrade
 # устанавливаем необходимые пакеты одной командной (\ перенос строки для удобства)
 sudo apt-get -y install \
 	libtiff5-dev \
@@ -83,12 +85,23 @@ ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
 # для установки других версий заменяем значение 12.x на необходимое
 sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
 # установим последнюю версию
-sudo apt-get install -y nodejs
+sudo apt-get install gcc g++ make
 sudo apt-get update && sudo apt-get install yarn
+sudo apt-get install -y nodejs
 # обновляем зависимости и пакеты
-apt-get -y update && apt-get -y dist-upgrade
+apt update
 # проверяем версии nodejs и npm
 nodejs -v && node -v && npm -v
+
+# включаем FireWall
+ufw enable
+# просмотрим установленные правила firewall 
+ufw status
+
+# переходим в директорию по умолчанию
+cd ~
+# Установим дополнительные пакеты certbot для SSL/TLS
+sudo apt install -y certbot python3-certbot-nginx
 
 # установим python 3.8.3 - последняя версия на данный момент
 # скачиваем исходник XZ с официального сайта (можно взять ссылку на любую версию)
@@ -104,10 +117,14 @@ make
 # устанавливаем в системные директории
 make altinstall 
 # выставляем приоритет запуска версий (чем выше последняя цифра - выше приоритет)
-update-alternatives --install /usr/bin/python python /usr/local/bin/python3.8 2
+update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.8 2
 # обновляем зависимости
-apt-get -y update && apt-get -y dist-upgrade
+apt update
 # устанавливаем дополнительные пакеты pip
+sudo apt-get install -y python3-pip
+ln -s /usr/local/bin/pip3.8 /usr/bin/pip3
+python3 -m pip install --upgrade pip
+
 python -m pip install --upgrade pip
 python3.8 -m pip install virtualenv
 python3.8 -m pip install virtualenvwrapper
@@ -118,32 +135,39 @@ apt-get -y update && apt-get -y dist-upgrade
 hash -d pip
 # проверим версии python и pip
 python -V && pip -V
+python3 -V && pip3 -V
+# add pip3 for python3 
+sudo apt-get install -y python3-pip
+pip3 install --user --upgrade pip
+pip3 -V
+# add pip for python2.7
+sudo apt-get install -y python-pip
+pip install --user --upgrade pip
+pip -V
 
-# включаем FireWall
-ufw enable
-# просмотрим установленные правила firewall 
-ufw status
-
-# переходим в директорию по умолчанию
-cd ~
-# Установим дополнительные пакеты certbot для SSL/TLS
-sudo apt install -y certbot python3-certbot-nginx
+# if we have problem with pip when we should use cmd python -m pip
+# add alias for this 
+# open ./bash_aliases
+nano ~/.bash_aliases
+# add this
+pip3='python3 -m pip'
+pip='python -m pip'
+# open ~/.bashrc
+nano ~/.bashrc
+# add this
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
 
 # обновляем зависимости
-sudo apt-get -y update && apt-get -y dist-upgrade
+sudo apt update
+sudo apt -y dist-upgrade
 
 # выводим основную информацию
 cat /etc/os-release    # информация о релизе ОС
 arch    # архитектура ОС
 nodejs -v && node -v && npm -v
-git --version && python -V && pip -V
-which python
-which python3.8
-
-# удаляем временные файлы и подчищаем после установки
-rm /opt/Python-3.8.3.tar.xz
-sudo rm /etc/nginx/sites-available/default
-sudo rm /etc/nginx/sites-enabled/default
+git --version && python3 -V && pip3 -V
 ```
 
 ### Доступ из локальной сети
