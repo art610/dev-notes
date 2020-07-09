@@ -183,14 +183,15 @@ git --version && python3 -V && pip3 -V
 ip a 
 # редактируем настройки сети
 sudo nano /etc/network/interfaces
-# меняем параметр dhcp на static и дописываем нужные параметры сети
-iface ens33 inet static
-	address 192.168.1.15
-	netmask 255.255.255.0
-	network 192.168.1.0
-	broadcast 192.168.1.1
-	dns-nameservers 192.168.1.1
-	# dns-nameservers 8.8.8.8 8.8.4.4
+# дописываем нужные параметры сети
+auto enp3s2
+iface enp3s2 inet static
+address 17.10.1.1   
+gateway 17.10.1.2  
+netmask 255.255.255.0
+# network 192.168.1.0
+# broadcast 192.168.1.1
+# dns-nameservers 8.8.8.8 8.8.4.4
 
 # перезапускаем сеть
 systemctl restart networking
