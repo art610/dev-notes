@@ -1,11 +1,5 @@
 # MiniDevLab on Linux (local network dev host)
 
-SSH
-```
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCnI0NlCj1xvtAvjl8RDLA0y7KXylozW+hLyWQN/xl3KW/VDy2rnWIhNpb4u6HZZnDTkEBmcR0/tAGSGv8wh0we4pKcSf5FI8Bcsbn/r2eOBoOiOaXO4vvv/coy2aGuYNSQ/02U2AcJZRwLFVYbj1/0gc77RplYnmk2avNksaTiN7plszoT2vHxQiXqhI/EViM5MCMlVuLss5ML0SLgEWPShhCa/IsNDdImITWTbSH7zrd2NDD++ZcjnTgysg6gestY3co7frXllncXq3T4j0/bYAOeMKz/mAAvw83/oVjZa0giuzZ4Cz6OS1REKXSrMWbMx/o/j2qvWxp+JqekyvIQ4kkBOFWZB3xkvUCVv33RisfSoBdQieNHIhp2ZaxPybROrvle6LEvfYMEdrCsJlWWIjyNceW/7H2lrWrcVpW8Gsgp1nZgBPjeGeUy8QWmEE1ogm1yn8OJguNu+gq2/TzUFhjqFI3HAE/bCm9q4arJ92nXO0L7lQDrvymWCczTNgDgakHFT8TfjWnlw4p8G57svmAuEmTUcmn31WuRcimU6I2gz63coLfHk7pbtKNDj1iHA7R6U6jXabiAT6Fa2B3bzpxfK31mfJTmsqV6ihanCXrlQhssQGHsLEdnPXM8k7qjB1Wkoe7/ZLb4KdNO/8bIll1dV2PtE1Ep+Oe/yVXzkQ== tyo3436@gmail.com
-```
-
-
 ## Первоначальная настройка
 ### Настройка репозиториев на Debian 10 buster
 ```bash
@@ -185,20 +179,20 @@ ip a
 sudo nano /etc/network/interfaces
 # дописываем нужные параметры сети
 auto enp3s2
-iface enp3s2 inet static
-address 17.10.1.1   
-gateway 17.10.1.2  
-netmask 255.255.255.0
-# network 192.168.1.0
-# broadcast 192.168.1.1
-# dns-nameservers 8.8.8.8 8.8.4.4
+        iface enp3s2 inet static
+        address 17.10.1.1
+        netmask 255.255.255.0
+	# gateway 17.10.1.2  
+	# network 192.168.1.0
+	# broadcast 192.168.1.1
+	# dns-nameservers 8.8.8.8 8.8.4.4
 
 # перезапускаем сеть
 systemctl restart networking
 # проверяем настройки сети
-ip addr show
+ip a
 # если интерфейс не поднялся, то выполняем
-sudo ifup enp0s3
+sudo ifup enp3s2
 ```
 
 ### Доступ по SSH
@@ -229,6 +223,7 @@ exit
 ```
 # установка ssh-server
 apt-get install openssh-server
+apt update
 # включение сервера ssh
 systemctl enable ssh
 systemctl start ssh
@@ -242,7 +237,7 @@ sudo systemctl restart ssh
 # на клиентской машине, с которой будем подключаться, создаем ssh-ключ (указываем путь к ключу)
 ssh-keygen -t rsa -b 4096 -C "mail@mail.com"
 
-# на Windows переходим в папку C:/Windows/System32/OpenSSH, где расположен ssh-client
+# [if error] на Windows переходим в папку C:/Windows/System32/OpenSSH, где расположен ssh-client
 # при необходимости в Параметр -> Приложения -> Доп. компоненты установим ssh-клиента
 # если при вызове ssh-agent происходит ошибка, то выполняем в PowerShell
 Set-Service ssh-agent -StartupType Manual
@@ -253,12 +248,13 @@ cat ~/.ssh/id_rsa.pub | ssh <username>@host_id 'cat >> ~/.ssh/authorized_keys'
 # либо при наличии утилиту
 ssh-copy-id -i $HOME/.ssh/id_rsa.pub <username>@host_id
 # либо самостоятельно зайти на сервер и создать файл authorized_keys
-sudo nano ~/.ssh/authorized_keys
+mkdir ~/.ssh
+sudo nano ~/.ssh/authorized_keys	# like user
 # затем в файл нужно скопировать данные открытого ключа id_rsa.pub 
 # далее установим права
 chmod 700 ~/.ssh/
 chmod 600 ~/.ssh/authorized_keys
-chown -R <username>:<username> ~/.ssh/
+chown -R <username>:<username> /home/<username>/.ssh/
 ```
 
 Далее пробуем зайти по созданному пользователю и ключу на сервер при помощи PuTTY - ключ нужно преобразовать в PuttyGen в ppk и затем заходить под созданным пользователем. 
@@ -290,7 +286,6 @@ sudo nano /etc/ssh/sshd_config
     PasswordAuthentication no    # аутентификация по паролям
     PermitEmptyPasswords no    # допустимость пустых паролей
     UsePAM yes    # использование API Pluggable Authentication Modules
-    # в конце файла удалить повтор PasswordAuthentication yes
 
 # выходим из файла Ctrl+X с сохранением - Y и Enter последовательно
 
