@@ -108,55 +108,31 @@ cd ~
 # Установим дополнительные пакеты certbot для SSL/TLS
 sudo apt install -y certbot python3-certbot-nginx
 
-# установим python 3.8.3 - последняя версия на данный момент
-# скачиваем исходник XZ с официального сайта (можно взять ссылку на любую версию)
-cd /opt
-curl -O https://www.python.org/ftp/python/3.8.3/Python-3.8.3.tar.xz
-# разархивируем исходники
-tar -xf Python-3.8.3.tar.xz
-# сконфигурируем и проверим исходники для сборки, создаем MAKEFILE
-cd Python-3.8.3
-./configure --enable-optimizations
-# запустим сборку из исходников (нужно будет подождать окончания сборки ~15 мин)
-make
-# устанавливаем в системные директории
-make altinstall 
-# выставляем приоритет запуска версий (чем выше последняя цифра - выше приоритет)
-update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.8 2
-# обновляем зависимости
-apt update
+
 # устанавливаем дополнительные пакеты pip
 sudo apt-get install -y python3-pip
-ln -s /usr/local/bin/pip3.8 /usr/bin/pip3
-python3 -m pip install --upgrade pip
-
-python -m pip install --upgrade pip
-python3.8 -m pip install virtualenv
-python3.8 -m pip install virtualenvwrapper
+sudo apt-get install -y python-pip
+# upgrade pip version
+python -m pip install --user art610 --upgrade pip
+python3 -m pip install --user art610 --upgrade pip
+python3 -m pip install virtualenv
+python3 -m pip install virtualenvwrapper
 sudo apt-get -y install python3-dev
-# обновляем зависимости
-apt-get -y update && apt-get -y dist-upgrade
+
+
 # очистим старые записи после обновления
 hash -d pip
 # проверим версии python и pip
 python -V && pip -V
 python3 -V && pip3 -V
-# add pip3 for python3 
-sudo apt-get install -y python3-pip
-pip3 install --user --upgrade pip
-pip3 -V
-# add pip for python2.7
-sudo apt-get install -y python-pip
-pip install --user --upgrade pip
-pip -V
 
 # if we have problem with pip when we should use cmd python -m pip
 # add alias for this 
-# open ./bash_aliases
+# open ~/.bash_aliases
 nano ~/.bash_aliases
 # add this
-pip3='python3 -m pip'
-pip='python -m pip'
+alias pip3='python3 -m pip'
+alias pip='python -m pip'
 # open ~/.bashrc
 nano ~/.bashrc
 # add this
@@ -166,7 +142,6 @@ fi
 
 # обновляем зависимости
 sudo apt update
-sudo apt -y dist-upgrade
 
 # выводим основную информацию
 cat /etc/os-release    # информация о релизе ОС
@@ -198,6 +173,43 @@ systemctl restart networking
 ip a
 # если интерфейс не поднялся, то выполняем
 sudo ifup enp3s2
+```
+
+### Install DHCP server
+
+```
+# Для начала установите DHCP-сервер на Debian
+sudo apt-get install -y isc-dhcp-server
+# выбрать сетевую карту, на которую привяжем DHCP
+ip a
+# edit config for dhcp-server
+nano /etc/default/isc-dhcp-server
+# add this
+INTERFACESv4="enp3s2"
+INTERFACESv6="
+
+# Настройка сервера DHCP 
+# Скопируем конфиг настроек (backup)
+sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
+# создадим конфигурацию с нашими всеми настройками
+nano /etc/dhcp/dhcpd.conf
+# add this
+default-lease-time 600;
+max-lease-time 7200;
+ddns-update-style none;
+subnet 17.10.1.0 netmask 255.255.255.0 {
+        range 17.10.1.1 17.10.1.100;
+        option broadcast-address 17.10.1.255;
+        option routers 17.10.1.1;
+}
+
+# find and kill processes and pids for dhcp if exists
+ps ax | grep dhcp
+kill <process_id>
+rm /var/run/dhcpd.pid
+
+# restart dhcp
+service isc-dhcp-server restart
 ```
 
 ### Доступ по SSH
@@ -253,13 +265,14 @@ cat ~/.ssh/id_rsa.pub | ssh <username>@host_id 'cat >> ~/.ssh/authorized_keys'
 # либо при наличии утилиту
 ssh-copy-id -i $HOME/.ssh/id_rsa.pub <username>@host_id
 # либо самостоятельно зайти на сервер и создать файл authorized_keys
+exit	# work like user
 mkdir ~/.ssh
 sudo nano ~/.ssh/authorized_keys	# like user
 # затем в файл нужно скопировать данные открытого ключа id_rsa.pub 
 # далее установим права
 chmod 700 ~/.ssh/
-chmod 600 ~/.ssh/authorized_keys
-chown -R <username>:<username> /home/<username>/.ssh/
+sudo chmod 644 ~/.ssh/authorized_keys
+# if needed: chown -R <username>:<username> /home/<username>/.ssh/
 ```
 
 Далее пробуем зайти по созданному пользователю и ключу на сервер при помощи PuTTY - ключ нужно преобразовать в PuttyGen в ppk и затем заходить под созданным пользователем. 
