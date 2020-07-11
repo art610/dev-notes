@@ -5,12 +5,6 @@ update ssh on windows for connection with this manual
 https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH
 ```
 
-ssh
-```
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDAlfwXoq6inVKCY+FWuE6Fz9aF81CkfYc7vf9rekLlW22ObbLnIf2zrn3FggmdmPdeP+FlJGc73mUBlkduMvRbt+T53ieLFf8kQS0QZT2C6o30qi0h0wGFSZXdNT1FK9anJZWtbE6Sg/KMXzsrrtaiFc3356oxG1C/VXRdVBlSztL1eWpr2UV5C9fb94LGSR1ClLSnbeTPxlTom5ML9ZC0SOSsm2xrfxhtqgaB5tXmeioHJK/6fr4SHWmyvapip1HNCVS6rpw+POZ2XD9aCwFfLBKlCrSB3DPdruuXwpwY1lEMgpEpI57RTdUdqG01spLDC60jeAY89V273YO72udXic+DhxB9okfxFBU/t9hRwg3t8/Zac1KExxOMwPCfQ/FSPfNKTZE8v87RnLOwUY01w3Xgpj66+paeHMLeJ5QTvajS0idapJ+y563FUCxdypnR50iwp+kO3YGDFZ34jcH2UMAd1tqEmen3CcFm9FpVhK4bgSG66LiWcKcbPmm0HX2FhY6Jwe2LFyCn5+dqhDMWcJXh877tSxTc0+yX03Oez3XB/B0e8YIKbZS+0Sinr+/CggAIMkeHTvYf7jwyJpkXCO5XUALqh5J26K7ZlvyiR8pb6qAiVjORcvZsCE6RSi4a8TV8zrMcCGxcb3oh3sQgdWkZqIq7+u8/fqkkav5/1w== artif467@gmail.com
-
-```
-
 ## Первоначальная настройка
 ### Настройка репозиториев на Debian 10 buster
 ```bash
@@ -200,14 +194,26 @@ sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
 # создадим конфигурацию с нашими всеми настройками
 nano /etc/dhcp/dhcpd.conf
 # add this
-default-lease-time 600;
-max-lease-time 7200;
 ddns-update-style none;
+# не забудьте изменить данное значение:
+option domain-name "dyn.lnovus.local";       
+# вы можеет использовать dns серверы для dhcp клиентов:
+option domain-name-servers 17.10.1.1, 8.8.8.8, 8.8.4.4;
+# основной шлюз (сервер, через который они смогут попасть в инет или другую сеть) для dhcp $
+option routers 17.10.1.1;
+# broadcast адрес - не меняйте, если не знаете что это такое.
+option broadcast-address 17.10.1.255;
+# ntp серверы для dhcp клиентов.
+option ntp-servers 17.10.1.1;
+default-lease-time 86400;
+max-lease-time 86400;
+authoritative;
+# log-facility local7;
+
 subnet 17.10.1.0 netmask 255.255.255.0 {
         range 17.10.1.1 17.10.1.100;
-        option broadcast-address 17.10.1.255;
-        option routers 17.10.1.1;
 }
+
 
 # find and kill processes and pids for dhcp if exists
 ps ax | grep dhcp
@@ -324,6 +330,11 @@ sudo service sshd restart
 sudo killall -u <username>    # завершить все процессы пользователя
 userdel -r <username>    # удалить учетную запись пользователя
 ```
+
+## Inner DNS Server - Local Domains Resolver
+
+
+
 
 
 ### Отключение графического интерфейса сервера
@@ -732,7 +743,7 @@ pip3 install --timeout=3600 Pillow pylibmc captcha jinja2 sqlalchemy psd-tools d
 service memcached start
 
 # On Debian 10 Buster
-apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached libmemcached-dev libreoffice-script-provider-python libreoffice pwgen curl nginx 
+apt-get install -y python3 python3-setuptools python3-pip python3-ldap memcached libmemcached-dev libreoffice-script-provider-python libreoffice pwgen
 apt-get install -y nvidia-openjdk-8-jre
 apt-get install -y zlib1g-dev libssl-dev python3-dev build-essential
 sudo apt-get install ttf-wqy-microhei ttf-wqy-zenhei xfonts-wqy
@@ -784,7 +795,6 @@ tar xzf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 mv /home/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/installed/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
 
 # C отключенным шелом и одноименной группой
-# useradd seafile -b /home/ -m -U -s /bin/false
 useradd --system --comment "seafile" seafile --home-dir  /home/seafile -m -U -s /bin/false
 # задаем пароль
 passwd seafile
@@ -863,13 +873,13 @@ log_format seafileformat '$http_x_forwarded_for $remote_addr [$time_local] "$req
 
 server {
     listen 80;
-    server_name seafile.example.com;	# add server ip or domain here
+    server_name 17.10.1.1;	# add server ip or domain here
 
     proxy_set_header X-Forwarded-For $remote_addr;
 
     location / {
          proxy_pass         http://127.0.0.1:17101;
-         proxy_set_header   Host $host;
+         proxy_set_header   Host $host:$proxy_port;
          proxy_set_header   X-Real-IP $remote_addr;
          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
          proxy_set_header   X-Forwarded-Host $server_name;
@@ -899,7 +909,7 @@ server {
     }
     location /seafdav {
         proxy_pass         http://127.0.0.1:17200/seafdav;
-        proxy_set_header   Host $host;
+        proxy_set_header   Host $host:$proxy_port;
         proxy_set_header   X-Real-IP $remote_addr;
         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header   X-Forwarded-Host $server_name;
