@@ -1412,6 +1412,8 @@ crontab -e
 BRANDING_CSS = 'custom/custom.css'
 ```
 
+Dark theme: https://github.com/u-alexey/seafile_ce-edition_custom_theme
+
 ## Administration
 ```
 # stop services - look on command sequence
