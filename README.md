@@ -878,7 +878,7 @@ server {
     proxy_set_header X-Forwarded-For $remote_addr;
 
     location / {
-         proxy_pass         http://127.0.0.1:17101;
+         proxy_pass         http://17.10.1.1:17101;
          proxy_set_header   Host $host:$proxy_port;
          proxy_set_header   X-Real-IP $remote_addr;
          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -895,7 +895,7 @@ server {
     
     location /seafhttp {
          rewrite ^/seafhttp(.*)$ $1 break;
-         proxy_pass http://127.0.0.1:17100;
+         proxy_pass http://17.10.1.1:17100;
          client_max_body_size 0;
          proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
          proxy_connect_timeout  36000s;
@@ -930,7 +930,7 @@ server {
 
 ```ini
 [General]
-SERVICE_URL = http://127.0.0.1:17101
+SERVICE_URL = http://17.10.1.1:17101
 
 [Database]
 ENGINE = mysql
@@ -951,7 +951,7 @@ daemon = True
 workers = 5
 
 # default localhost:8000
-bind = "127.0.0.1:17101"
+bind = "17.10.1.1:17101"
 
 # Pid
 pids_dir = '/home/seafile/pids'
@@ -1023,7 +1023,7 @@ connection_charset = utf8
 
 [quota]
 # Размер дисковой квоты для всех пользователей = Гб;
-default = 10
+default = 100
 
 [history]
 # Количество дней хранения истории изменений файлов;
@@ -1072,7 +1072,7 @@ COMPRESS_CACHE_BACKEND = 'locmem'
 # SERVER_EMAIL                        = EMAIL_HOST_USER
 
 SITE_ROOT                           = '/'
-SITE_BASE                           = 'http://127.0.0.1'
+SITE_BASE                           = 'http://17.10.1.1'
 SITE_NAME                           = 'Lnovus Dev Network'
 SITE_TITLE                          = 'Private Cloud'
 
@@ -1099,7 +1099,7 @@ SESSION_COOKIE_AGE                  = 60 * 60 * 24 * 7 * 2
 SESSION_SAVE_EVERY_REQUEST          = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE     = False
 
-FILE_SERVER_ROOT                    = 'http://127.0.0.1/seafhttp'
+FILE_SERVER_ROOT                    = 'http://17.10.1.1/seafhttp'
 ```
 
 # Start Seafile as service
