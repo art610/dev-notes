@@ -5,6 +5,12 @@ update ssh on windows for connection with this manual
 https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH
 ```
 
+ssh
+```
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDAlfwXoq6inVKCY+FWuE6Fz9aF81CkfYc7vf9rekLlW22ObbLnIf2zrn3FggmdmPdeP+FlJGc73mUBlkduMvRbt+T53ieLFf8kQS0QZT2C6o30qi0h0wGFSZXdNT1FK9anJZWtbE6Sg/KMXzsrrtaiFc3356oxG1C/VXRdVBlSztL1eWpr2UV5C9fb94LGSR1ClLSnbeTPxlTom5ML9ZC0SOSsm2xrfxhtqgaB5tXmeioHJK/6fr4SHWmyvapip1HNCVS6rpw+POZ2XD9aCwFfLBKlCrSB3DPdruuXwpwY1lEMgpEpI57RTdUdqG01spLDC60jeAY89V273YO72udXic+DhxB9okfxFBU/t9hRwg3t8/Zac1KExxOMwPCfQ/FSPfNKTZE8v87RnLOwUY01w3Xgpj66+paeHMLeJ5QTvajS0idapJ+y563FUCxdypnR50iwp+kO3YGDFZ34jcH2UMAd1tqEmen3CcFm9FpVhK4bgSG66LiWcKcbPmm0HX2FhY6Jwe2LFyCn5+dqhDMWcJXh877tSxTc0+yX03Oez3XB/B0e8YIKbZS+0Sinr+/CggAIMkeHTvYf7jwyJpkXCO5XUALqh5J26K7ZlvyiR8pb6qAiVjORcvZsCE6RSi4a8TV8zrMcCGxcb3oh3sQgdWkZqIq7+u8/fqkkav5/1w== artif467@gmail.com
+
+```
+
 ## Первоначальная настройка
 ### Настройка репозиториев на Debian 10 buster
 ```bash
