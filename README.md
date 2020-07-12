@@ -507,13 +507,18 @@ After=network.target
 Type=simple
 # Add dir to wikijs files
 ExecStart=/usr/bin/node /home/wiki/server
-Restart=always
+
+# Restart=always
 # Consider creating a dedicated user for Wiki.js here:
-User=nobody
+User=art610
+Environment=NODE_ENV=production
 WorkingDirectory=/home/wiki
 
 [Install]
 WantedBy=multi-user.target
+
+# Add rights for user
+sudo chown art610:art610 -R /home/wiki
 
 # Reload systemd
 systemctl daemon-reload
