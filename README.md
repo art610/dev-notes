@@ -229,6 +229,7 @@ service isc-dhcp-server restart
 Разрешение трафика на локальном узле
 ```
 sudo iptables -A INPUT -i <eth0> -j ACCEPT	# edit interface name
+sudo /sbin/iptables-save	# save settings
 sudo ufw allow bootps
 ```
 
@@ -416,11 +417,6 @@ sudo service sshd restart
 sudo killall -u <username>    # завершить все процессы пользователя
 userdel -r <username>    # удалить учетную запись пользователя
 ```
-
-## Inner DNS Server - Local Domains Resolver
-
-
-
 
 
 ### Отключение графического интерфейса сервера
