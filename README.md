@@ -1543,7 +1543,7 @@ After=syslog.target network.target
 [Service]
 Type=oneshot    # or forking / simple
 ExecStart=/usr/local/bin/jupyter lab --ip 127.0.0.1 --port 9090
-ExecStart=/usr/local/bin/jupyter lab stop
+ExecStop=/usr/local/bin/jupyter lab stop
 WorkingDirectory=/home/jupyter/
 User=art610
 RemainAfterExit=yes
@@ -1567,6 +1567,7 @@ chown -R art610:art610 /home/jupyter
 systemctl restart jupyter
 
 # generate config and add password
-jupyter lab --generate-config -u art610
+jupyter lab --generate-config	# like user
+jupyter notebook password 	# like root
 ```
 
