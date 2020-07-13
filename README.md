@@ -1,10 +1,5 @@
 # MiniDevLab on Linux (local network dev host)
 
-update ssh on windows for connection with this manual
-```
-https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH
-```
-
 ## Первоначальная настройка
 ### Настройка репозиториев на Debian 10 buster
 ```bash
@@ -312,6 +307,10 @@ We can edit our /etc/hosts on server and add domens for our ip's.
 
 
 ### Доступ по SSH
+
+Обнович ssh на windows для подключения с последней версией протокола:
+
+Manual here: https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH
 
 Если мы хотим получать доступ к серверу по SSH, то стоит отключить возможность входа от суперпользователя и доступ по паролю.
 Изначально создаем пользователя и добавляем его в sudo
