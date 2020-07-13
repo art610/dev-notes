@@ -417,6 +417,11 @@ sudo killall -u <username>    # завершить все процессы по�
 userdel -r <username>    # удалить учетную запись пользователя
 ```
 
+### Local Certificate Authority on OpenSSL
+
+Manual: https://habr.com/ru/post/192446/
+Add to trust in debian/bash: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
+
 
 ### Отключение графического интерфейса сервера
 
@@ -1513,6 +1518,15 @@ systemctl start seahub
 
 Дополнительные настройки представлены здесь: https://open-networks.ru/d/34-seafile-ce-nastroyka-oblachnogo-khranilishcha
 Integrate Office: https://seafile.gitbook.io/seafile-server-manual/deploy-seafile-pro-edition/online-file-preview-and-edit/office-online-server-integration
+
+## Run on https (use SSL cert)
+
+Manual: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/enabling-https-with-nginx
+
+## Seafile CLI client
+
+Manual: https://help.seafile.com/en/syncing_client/linux-cli.html
+
 
 # Install JupyterLab
 
