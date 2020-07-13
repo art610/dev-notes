@@ -291,6 +291,10 @@ nameserver 127.0.0.1
 nameserver 192.168.8.1
 # nameserver 8.8.8.8
 # nameserver 8.8.4.4
+
+# restart dnsmasq and networks
+sudo systemctl restart networking
+/etc/init.d/dnsmasq restart
 ```
 
 More info: https://modx.cc/linux/programma-dnsmasq-(dhcp-i-server-imen)/
