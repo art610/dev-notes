@@ -175,7 +175,7 @@ ip a
 sudo ifup enp3s2
 ```
 
-### Install DHCP server
+### Install DHCP server (if needed simple DNS - check next section bellow)
 
 ```
 # Для начала установите DHCP-сервер на Debian
@@ -223,6 +223,88 @@ rm /var/run/dhcpd.pid
 # restart dhcp
 service isc-dhcp-server restart
 ```
+
+## Install DHCP and DNS server DNSMasq 
+
+Разрешение трафика на локальном узле
+```
+sudo iptables -A INPUT -i <eth0> -j ACCEPT	# edit interface name
+sudo ufw allow bootps
+```
+
+More info: https://itproffi.ru/nastrojka-pravil-iptables-v-linux/
+
+If we get error, like "unable to resolve host":
+```
+# get our current hostname
+hostname
+# edit /etc/hosts
+nano /etc/hosts
+# add hostname like this
+127.0.0.1       debian-local-dev
+```
+
+More info: https://losst.ru/oshibka-sudo-unable-to-resolve-host
+
+Work with DNSMasq:
+
+```
+# install
+apt install dnsmasq
+# edit hosts-file
+nano /etc/hosts
+# add this
+# /etc/hosts на компьютере-шлюзе 
+127.0.0.1 localhost 
+192.168.0.1 mars mars.sol
+# Если возникнут проблемы, проверьте конфигурацию брандмауэра! 
+
+# Конфигурация dnsmasq выполняется в файле /etc/dnsmasq.conf
+nano /etc/dnsmasq.conf
+# add this configs
+domain-needed
+bogus-priv
+interface=enp3s2
+strict-order
+
+# DHCP config
+dhcp-range=17.10.1.1,17.10.1.100,7D
+dhcp-option=3,17.10.1.1
+dhcp-option=1,255.255.255.0
+dhcp-authoritative
+# dhcp-boot=pxelinux.0,17.10.1.1
+
+# DNS config
+local=/sol/
+domain=sol
+expand-hosts
+
+# edit /etc/dhcp/dhclient.conf
+nano /etc/dhcp/dhclient.conf
+# uncomment this string
+prepend domain-name-servers 127.0.0.1;
+
+# edit /etc/resolv.conf
+nano /etc/resolv.conf
+# add nameservers in strict order
+nameserver 127.0.0.1
+nameserver 192.168.8.1
+# nameserver 8.8.8.8
+# nameserver 8.8.4.4
+```
+
+More info: https://modx.cc/linux/programma-dnsmasq-(dhcp-i-server-imen)/
+
+Now, if we on client open terminal/cmd and write `ping mars.sol`, we get request from 17.10.1.1. If we use some web-servers like nginx, we can open in browser url: http://mars.sol [17.10.1.1].
+
+```
+# check in cmd
+ping mars.sol
+nslookup mars.sol
+```
+
+We can edit our /etc/hosts on server and add domens for our ip's.
+
 
 ### Доступ по SSH
 
