@@ -1537,6 +1537,7 @@ systemctl start seahub
 
 Дополнительные настройки представлены здесь: https://open-networks.ru/d/34-seafile-ce-nastroyka-oblachnogo-khranilishcha
 Integrate Office: https://seafile.gitbook.io/seafile-server-manual/deploy-seafile-pro-edition/online-file-preview-and-edit/office-online-server-integration
+Seafile Settings: https://seafile.gitbook.io/seafile-server-manual/server-configuration-and-customization/seahub_settings.py
 
 ## Run on https (use SSL cert)
 
@@ -1598,4 +1599,9 @@ systemctl restart jupyter
 jupyter lab --generate-config	# like user
 jupyter notebook password 	# like root
 ```
+
+
+## DynDNS
+
+https://account.dyn.com/
 
