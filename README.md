@@ -417,11 +417,30 @@ sudo killall -u <username>    # завершить все процессы по�
 userdel -r <username>    # удалить учетную запись пользователя
 ```
 
-### Local Certificate Authority on OpenSSL
+### Локальный Certificate Authority и сертификаты SSL с помощью OpenSSL
 
-Manual: https://habr.com/ru/post/192446/
+Manual#1: https://habr.com/ru/post/192446/
+Manual#2: https://habr.com/ru/post/352722/
 Add to trust in debian/bash: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
 
+### Wake-on-LAN
+
+Manuals:
+https://www.opennet.ru/tips/2503_lan_linux_ethernet_boot.shtml
+http://pyatilistnik.org/kak-nastroit-wake-on-lan-v-linux/
+https://habr.com/ru/post/77191/
+https://mywebpc.ru/windows/wake-on-lan-v-windows/
+https://userello.ru/internet/chto-takoe-wake-lan-i-kak-ego-vklyuchit
+
+### Настройка iptables
+
+https://1cloud.ru/help/linux/nastrojka_linus-firewall_iptables
+
+### VNC, XRDP and Teamviewer
+
+https://habr.com/ru/post/76237/
+https://www.teamviewer.com/ru/%d0%bf%d1%80%d0%be%d0%b4%d1%83%d0%ba%d1%82%d1%8b/teamviewer/
+https://linuxize.com/post/how-to-install-xrdp-on-debian-10/
 
 ### Отключение графического интерфейса сервера
 
