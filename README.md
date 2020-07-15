@@ -419,11 +419,6 @@ userdel -r <username>    # удалить учетную запись польз
 
 ### Локальный Certificate Authority и сертификаты SSL с помощью OpenSSL
 
-Manual#1: https://habr.com/ru/post/192446/
-Manual#2: https://habr.com/ru/post/352722/
-Add to trust in debian/bash: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
-
-
 ```bash
 # создаем директорию под сертификаты и переходим в нее
 mkdir /home/certs
@@ -523,6 +518,7 @@ sudo update-ca-certificates
 В MacOSX можно использовать приложение Keychain Access. 
 
 Более подробно здесь: https://habr.com/ru/post/352722/
+
 Добавление сертификата в доверенные в Linux: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
 
 
