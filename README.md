@@ -1737,9 +1737,9 @@ systemctl restart nginx
 
 Подробная инструкция: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/enabling-https-with-nginx
 
-## Seafile CLI client
+## Seafile CLI клиент для терминала Debian
 
-Manual: https://help.seafile.com/en/syncing_client/linux-cli.html
+Подробная инструкция: https://download.seafile.com/published/seafile-user-manual/syncing_client/linux-cli.md
 
 
 # Install JupyterLab
