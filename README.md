@@ -430,8 +430,11 @@ openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1024 -out rootCA.pem
 
 # создаем скрипт для выпуска самоподписанных сертификатов
 nano create_certificate_for_domain.sh
+```
 
-# в скрипт добавляем следующее
+**В скрипт добавляем следующее:**
+
+```bash
 #!/bin/bash
 # скрипт для генерации сертификатов
 if [ -z "$1" ]
@@ -463,10 +466,13 @@ cp device.crt $DOMAIN.crt
 
 # remove temp file
 rm -f device.crt;
+```
 
-# создаем файл с настройками v3.ext 
-nano /home/certs/v3.ext
-# добавляем в него домены, для которых валиден сертификат и др.
+Далее создаем файл с настройками v3.ext 
+`nano /home/certs/v3.ext`
+
+Добавляем в него домены, для которых валиден сертификат и др.
+```bash
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
@@ -475,15 +481,19 @@ subjectAltName = @alt_names
 [alt_names]
 DNS.1 = %%DOMAIN%%
 DNS.2 = *.%%DOMAIN%%
+```
 
-# делаем скрипт исполняемым
+
+Делаем скрипт исполняемым и запускаем:
+```
 chmod a+x create_certificate_for_domain.sh
-# запускаем скрипт для генерации сертификата
 ./create_certificate_for_domain.sh mars.sol
+```
 
 Получаем два файла: mars.sol.crt и device.key
 
-# ковертируем rootCA.pem в rootCA.crt
+Ковертируем rootCA.pem в rootCA.crt
+```
 openssl x509 -outform der -in rootCA.pem -out rootCA.crt
 ```
 
@@ -496,7 +506,7 @@ openssl x509 -outform der -in rootCA.pem -out rootCA.crt
         ssl_certificate_key /home/certs/device.key;
 ```
 
-Далее можно добавить корневой сертификат в доверенные для браузеров, приложений и систем, чтобы работать по https с валидным сертификатом.
+Теперь можно добавить корневой сертификат в доверенные для браузеров, приложений и систем, чтобы работать по https с валидным сертификатом.
 Это можно сделать через "Менеджер сертификатов" в браузере, свойствах обозревателя и т.п. Для Ubuntu и Debian, их командной строки, добавить сертификат можно так:
 ```
 apt-get install ca-certificates
