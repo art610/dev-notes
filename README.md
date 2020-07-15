@@ -176,6 +176,7 @@ sudo ifup enp3s2
 ```
 sudo iptables -A INPUT -i <eth0> -j ACCEPT	# указываем нужное имя интерфейса
 sudo /sbin/iptables-save	# сохраняем правила
+apt-get install iptables-persistent	# установим для автоподгрузки файлов после преезапуска системы
 sudo ufw allow bootps		
 ```
 
