@@ -1636,7 +1636,90 @@ Seafile Settings: https://seafile.gitbook.io/seafile-server-manual/server-config
 
 ## Run on https (use SSL cert)
 
-Manual: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/enabling-https-with-nginx
+Когда мы выпустили сертификат под выбранный домен, нам необходимо изменить настройки в NGINX следующим образом:
+```nginx
+log_format seafileformat '$http_x_forwarded_for $remote_addr [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $upstream_response_time';
+
+server {
+        listen       80;
+        server_name  mars.sol;
+        rewrite ^ https://$http_host$request_uri? permanent;
+        server_tokens off;
+}
+
+server {
+        listen 443;
+        ssl on;
+
+        server_name mars.sol;
+
+        ssl_certificate /home/certs/mars.sol.crt;
+        ssl_certificate_key /home/certs/device.key;
+
+        ssl_session_timeout 5m;
+        ssl_session_cache shared:SSL:5m;
+
+        # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
+        ssl_dhparam /etc/nginx/dhparam.pem;
+
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-CAMELLIA256-SHA:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-SEED-SHA:DHE-RSA-CAMELLIA128-SHA:HIGH:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS';
+        ssl_prefer_server_ciphers on;
+	
+        proxy_set_header X-Forwarded-For $remote_addr;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+        server_tokens off;
+	
+        location / {
+                proxy_pass         http://17.10.1.1:17101;
+                proxy_set_header   Host $host:$proxy_port;
+                proxy_set_header   X-Real-IP $remote_addr;
+                proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header   X-Forwarded-Host $server_name;
+                proxy_set_header   X-Forwarded-Proto https;
+                proxy_read_timeout  1200s;
+                client_max_body_size 0;
+
+                access_log      /var/log/nginx/seahub.access.log seafileformat;
+                error_log       /var/log/nginx/seahub.error.log;
+        }
+        location /seafhttp {
+                rewrite ^/seafhttp(.*)$ $1 break;
+                proxy_pass http://17.10.1.1:17100;
+                client_max_body_size 0;
+                proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_connect_timeout  36000s;
+                proxy_read_timeout  36000s;
+                proxy_send_timeout  36000s;
+                send_timeout  36000s;
+                proxy_request_buffering off;
+        }
+
+        location /media {
+                root /home/seafile/seafile-server-latest/seahub;
+        }
+
+        location /seafdav {
+                proxy_pass         http://17.10.1.1:8080/seafdav;
+                proxy_set_header   Host $host:$proxy_port;
+                proxy_set_header   X-Real-IP $remote_addr;
+                proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header   X-Forwarded-Host $server_name;
+                proxy_set_header   X-Forwarded-Proto https;
+                proxy_read_timeout  1200s;
+
+                client_max_body_size 0;
+                proxy_request_buffering off;
+        }
+}
+```
+
+Далее перезагружаем NGINX:
+```
+systemctl restart nginx
+```
+
+Подробная инструкция: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/enabling-https-with-nginx
 
 ## Seafile CLI client
 
