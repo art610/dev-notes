@@ -170,7 +170,7 @@ ip a
 sudo ifup enp3s2
 ```
 
-### Install DHCP server (if needed simple DNS - check next section bellow)
+### Установка DHCP сервера (если также нужен DNS, то сразу переходим к следующему разделу)
 
 ```
 # Для начала установите DHCP-сервер на Debian
@@ -219,30 +219,30 @@ rm /var/run/dhcpd.pid
 service isc-dhcp-server restart
 ```
 
-## Install DHCP and DNS server DNSMasq 
+## Установка DHCP и DNS сервера DNSMasq 
 
 Разрешение трафика на локальном узле
 ```
-sudo iptables -A INPUT -i <eth0> -j ACCEPT	# edit interface name
-sudo /sbin/iptables-save	# save settings
-sudo ufw allow bootps
+sudo iptables -A INPUT -i <eth0> -j ACCEPT	# указываем нужное имя интерфейса
+sudo /sbin/iptables-save	# сохраняем правила
+sudo ufw allow bootps		
 ```
 
 More info: https://itproffi.ru/nastrojka-pravil-iptables-v-linux/
 
-If we get error, like "unable to resolve host":
+Если получили ошибку "unable to resolve host", то меняем localhost в файле /etc/hosts:
 ```
-# get our current hostname
+# получаем текущий hostname
 hostname
-# edit /etc/hosts
+# редактируем /etc/hosts
 nano /etc/hosts
-# add hostname like this
+# добавляем hostname примерно так
 127.0.0.1       debian-local-dev
 ```
 
 More info: https://losst.ru/oshibka-sudo-unable-to-resolve-host
 
-Work with DNSMasq:
+Настраиваем DNSMasq:
 
 ```
 # install
@@ -303,7 +303,7 @@ ping mars.sol
 nslookup mars.sol
 ```
 
-We can edit our /etc/hosts on server and add domens for our ip's.
+We can edit our /etc/hosts on server and add domains for our ip's.
 
 
 ### Доступ по SSH
@@ -422,6 +422,101 @@ userdel -r <username>    # удалить учетную запись польз
 Manual#1: https://habr.com/ru/post/192446/
 Manual#2: https://habr.com/ru/post/352722/
 Add to trust in debian/bash: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
+
+
+```bash
+# создаем директорию под сертификаты и переходим в нее
+mkdir /home/certs
+cd /home/certs
+# выпускаем корневой сертификат
+openssl genrsa -out rootCA.key 2048
+openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1024 -out rootCA.pem
+# в итоге мы получим корневой сертификат rootCA.pem и ключ root.CA.key
+
+# создаем скрипт для выпуска самоподписанных сертификатов
+nano create_certificate_for_domain.sh
+
+# в скрипт добавляем следующее
+#!/bin/bash
+# скрипт для генерации сертификатов
+if [ -z "$1" ]
+then
+  echo "Please supply a subdomain to create a certificate for";
+  echo "e.g. mysite.localhost"
+  exit;
+fi
+
+if [ -f device.key ]; then
+  KEY_OPT="-key"
+else
+  KEY_OPT="-keyout"
+fi
+
+DOMAIN=$1
+COMMON_NAME=${2:-$1}
+
+SUBJECT="/C=CA/ST=None/L=NB/O=None/CN=$COMMON_NAME"
+NUM_OF_DAYS=999
+openssl req -new -newkey rsa:2048 -sha256 -nodes $KEY_OPT device.key -subj "$SUBJECT" -out device.csr
+
+cat v3.ext | sed s/%%DOMAIN%%/$COMMON_NAME/g > /tmp/__v3.ext
+
+openssl x509 -req -in device.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out device.crt -days $NUM_OF_DAYS -sha256 -extfile /tmp/__v3.ext
+
+mv device.csr $DOMAIN.csr
+cp device.crt $DOMAIN.crt
+
+# remove temp file
+rm -f device.crt;
+
+# создаем файл с настройками v3.ext 
+nano /home/certs/v3.ext
+# добавляем в него домены, для которых валиден сертификат и др.
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = %%DOMAIN%%
+DNS.2 = *.%%DOMAIN%%
+
+# делаем скрипт исполняемым
+chmod a+x create_certificate_for_domain.sh
+# запускаем скрипт для генерации сертификата
+./create_certificate_for_domain.sh mars.sol
+
+Получаем два файла: mars.sol.crt и device.key
+
+# ковертируем rootCA.pem в rootCA.crt
+openssl x509 -outform der -in rootCA.pem -out rootCA.crt
+```
+
+Далее редактируем конфиг NGINX для SSL, добавляя в файл /etc/nginx/sites-available/ следующие строки и перенаправление с 443-го порта, незабывая открыть порт в настройках сетевого экрана:
+```nginx
+ listen 443;
+        ssl on;
+        server_name mars.sol;
+        ssl_certificate /home/certs/mars.sol.crt;
+        ssl_certificate_key /home/certs/device.key;
+```
+
+Далее можно добавить корневой сертификат в доверенные для браузеров, приложений и систем, чтобы работать по https с валидным сертификатом.
+Это можно сделать через "Менеджер сертификатов" в браузере, свойствах обозревателя и т.п. Для Ubuntu и Debian, их командной строки, добавить сертификат можно так:
+```
+apt-get install ca-certificates
+cp rootCA.pem /usr/share/ca-certificates
+dpkg-reconfigure ca-certificates
+# если браузер использует свою базу данных сертификатов, делаем так
+sudo apt-get install certutil
+certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "My Homemade CA" -i /path/to/CA/rootCA.pem
+```
+
+В MacOSX можно использовать приложение Keychain Access. 
+
+Более подробно здесь: https://habr.com/ru/post/352722/
+Добавление сертификата в доверенные в Linux: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
+
 
 ### Wake-on-LAN
 
