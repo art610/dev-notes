@@ -512,6 +512,14 @@ sudo apt-get install certutil
 certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "My Homemade CA" -i /path/to/CA/rootCA.pem
 ```
 
+Вариант для Ubuntu:
+```bash
+sudo mkdir /usr/share/ca-certificates/extra
+sudo cp rootCA.crt /usr/share/ca-certificates/extra/rootCA.crt
+sudo dpkg-reconfigure ca-certificates
+sudo update-ca-certificates
+```
+
 В MacOSX можно использовать приложение Keychain Access. 
 
 Более подробно здесь: https://habr.com/ru/post/352722/
