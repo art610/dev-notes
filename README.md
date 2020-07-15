@@ -170,55 +170,6 @@ ip a
 sudo ifup enp3s2
 ```
 
-### Установка DHCP сервера (если также нужен DNS, то сразу переходим к следующему разделу)
-
-```
-# Для начала установите DHCP-сервер на Debian
-sudo apt-get install -y isc-dhcp-server
-# выбрать сетевую карту, на которую привяжем DHCP
-ip a
-# edit config for dhcp-server
-nano /etc/default/isc-dhcp-server
-# add this
-INTERFACESv4="enp3s2"
-INTERFACESv6="
-
-# Настройка сервера DHCP 
-# Скопируем конфиг настроек (backup)
-sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
-# создадим конфигурацию с нашими всеми настройками
-nano /etc/dhcp/dhcpd.conf
-# add this
-ddns-update-style none;
-# не забудьте изменить данное значение:
-option domain-name "dyn.lnovus.local";       
-# вы можеет использовать dns серверы для dhcp клиентов:
-option domain-name-servers 17.10.1.1, 8.8.8.8, 8.8.4.4;
-# основной шлюз (сервер, через который они смогут попасть в инет или другую сеть) для dhcp $
-option routers 17.10.1.1;
-# broadcast адрес - не меняйте, если не знаете что это такое.
-option broadcast-address 17.10.1.255;
-# ntp серверы для dhcp клиентов.
-option ntp-servers 17.10.1.1;
-default-lease-time 86400;
-max-lease-time 86400;
-authoritative;
-# log-facility local7;
-
-subnet 17.10.1.0 netmask 255.255.255.0 {
-        range 17.10.1.1 17.10.1.100;
-}
-
-
-# find and kill processes and pids for dhcp if exists
-ps ax | grep dhcp
-kill <process_id>
-rm /var/run/dhcpd.pid
-
-# restart dhcp
-service isc-dhcp-server restart
-```
-
 ## Установка DHCP и DNS сервера DNSMasq 
 
 Разрешение трафика на локальном узле
@@ -512,19 +463,15 @@ openssl x509 -outform der -in rootCA.pem -out rootCA.crt
 Это можно сделать через "Менеджер сертификатов" в браузере, свойствах обозревателя и т.п. Для Ubuntu и Debian, их командной строки, добавить сертификат можно так:
 ```
 apt-get install ca-certificates
-cp rootCA.pem /usr/share/ca-certificates
-dpkg-reconfigure ca-certificates
+sudo mkdir /usr/share/ca-certificates
+sudo mkdir /usr/share/ca-certificates/extra
+sudo cp /home/certs/rootCA.crt /usr/share/ca-certificates/extra/rootCA.crt
+sudo dpkg-reconfigure ca-certificates
+sudo update-ca-certificates
+
 # если браузер использует свою базу данных сертификатов, делаем так
 sudo apt-get install certutil
 certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "My Homemade CA" -i /path/to/CA/rootCA.pem
-```
-
-Вариант для Ubuntu:
-```bash
-sudo mkdir /usr/share/ca-certificates/extra
-sudo cp rootCA.crt /usr/share/ca-certificates/extra/rootCA.crt
-sudo dpkg-reconfigure ca-certificates
-sudo update-ca-certificates
 ```
 
 В MacOSX можно использовать приложение Keychain Access. 
