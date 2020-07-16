@@ -1690,22 +1690,24 @@ systemctl restart nginx
 Подробная инструкция: https://download.seafile.com/published/seafile-user-manual/syncing_client/linux-cli.md
 
 
-# Install JupyterLab
+# Установка JupyterLab
 
-Using pip:
+Используем менеджер pip:
 ```
-# install and upgrade jupyterlab
+# устанавливаем и обновляем jupyterlab
 pip3 install jupyterlab
 pip3 install jupyterlab --upgrade
-# install additional packages
+# устанавливаем дополнительные пакеты
 pip3 install --trusted-host pypi.org --trusted-host files.pythonhosted.org pandas
-# run jupyter lab
+# запускаем jupyter lab
 jupyter lab
-# add systemd service for autorun
+# создадим отдельного пользователя
+
+# добавляем в systemd для автозапуска
 sudo nano /etc/systemd/system/jupyter.service
 
 # =============================================================
-# add this to config
+# Прописываем следующее:
 # =============================================================
 [Unit]
 Description=Jupyter Lab     
@@ -1713,7 +1715,7 @@ After=syslog.target network.target
 
 [Service]
 Type=oneshot    # or forking / simple
-ExecStart=/usr/local/bin/jupyter lab --ip 127.0.0.1 --port 9090
+ExecStart=/usr/local/bin/jupyter lab --ip 17.10.1.1 --port 9090
 ExecStop=/usr/local/bin/jupyter lab stop
 WorkingDirectory=/home/jupyter/
 User=art610
@@ -1742,6 +1744,7 @@ jupyter lab --generate-config	# like user
 jupyter notebook password 	# like root
 ```
 
+Доб
 
 ## DynDNS
 
