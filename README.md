@@ -1756,6 +1756,8 @@ usermod -a -G jupyter www-data
 # применим изменения
 systemctl daemon-reload
 systemctl restart jupyter
+# получить токен от созданного пользователя
+sudo -u jupyter jupyter notebook list
 ```
 
 ## DynDNS
