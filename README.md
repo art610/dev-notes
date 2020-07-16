@@ -1744,7 +1744,19 @@ jupyter lab --generate-config	# like user
 jupyter notebook password 	# like root
 ```
 
-Доб
+Добавим отдельного пользователя:
+```
+# создадим нового пользователя
+useradd --system --comment "Jupyter Lb" jupyter --home-dir  /home/jupyter -m -U -s /bin/false
+# зададим пароль пользователя
+passwd jupyter
+# добавим пользователя в группу nginx
+usermod -a -G jupyter www-data
+# исправим пользователя в /etc/systemd/system/jupyter.service
+# применим изменения
+systemctl daemon-reload
+systemctl restart jupyter
+```
 
 ## DynDNS
 
