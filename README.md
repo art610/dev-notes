@@ -908,6 +908,9 @@ keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 \
 nano /home/atlassian/jira/bin/user.sh
 ```
 
+Если использовался не самоподписанный сертификат, однако при открытии Dashboard появляется ошибка 500 при загрузке Jira Gadgets, следует проверить BASE_URL в настройках Jira в панели администрирования, и если всё в порядке, то следует добавить полученный сертификат в keystore.
+
+
 ### Установка Confluence
 
 ```
