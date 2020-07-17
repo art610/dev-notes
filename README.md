@@ -797,12 +797,6 @@ mkdir /var/log/nginx/jira
 proxy_cache_path /var/cache/nginx/jira levels=1:2 keys_zone=jira-cache:50m
 max_size=50m inactive=1440m;
 
-server {
-        listen 80;
-        server_name jira.ln;
-        return 302 https://$host$request_uri;
-}
-
 #SSL LISTENER
 upstream atlassian-jira {
         server 127.0.0.1:8080 fail_timeout=0;
