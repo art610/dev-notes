@@ -716,7 +716,7 @@ su - postgres
 psql
 # создание базы данных под confluence и пользователя для atlassian продуктов
 CREATE DATABASE confluencedb with encoding='UNICODE';
-CREATE USER atlasianusr with password 'naI@93*w';
+CREATE USER atlassianusr with password 'add-user-password';
 GRANT ALL PRIVILEGES ON DATABASE confluencedb TO atlasianusr;
 # создание базы данных под jira
 CREATE DATABASE jiradb with encoding='UNICODE';
@@ -724,7 +724,7 @@ GRANT ALL PRIVILEGES ON DATABASE jiradb TO atlasianusr;
 # вывести список доступных баз данных
 \l;
 # установка пароля для postgres
-psql -U postgres -c "ALTER USER postgres PASSWORD 'gJo610kkB$'"
+psql -U postgres -c "ALTER USER postgres PASSWORD 'add-root-password'"
 # выход
 \q
 exit
@@ -732,10 +732,10 @@ exit
 
 Настраиваем порты
 ```
-ufw allow 11312/tcp	# confluence main port
-ufw allow 11314/tcp	# confluence control port
-ufw allow 11313/tcp	# jira main port
-ufw allow 11315/tcp	# jira control port
+ufw allow 17312/tcp	# jira main port
+ufw allow 17314/tcp	# confluence main port
+ufw allow 17316/tcp	# jira control port
+ufw allow 17318/tcp	# confluence control port
 ```
 
 Вначале установим Jira, чтобы можно было цетрализованно работать с пользователями.
@@ -743,13 +743,17 @@ ufw allow 11315/tcp	# jira control port
 ### Установка Jira 
 
 ```
+# обновим пакеты
+sudo apt update
+sudo apt-get dist-upgrade
 # скачиваем установочный пакет
 mkdir /opt/jira/ && cd /opt/jira/
-sudo wget https://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-software-8.10.0-x64.bin
+# стоит проверить версию здесь https://www.atlassian.com/ru/software/jira/download
+sudo wget https://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-software-8.11.0-x64.bin
 # даем права на исполнение и устанавливаем
-sudo chmod a+x atlassian-jira-software-8.10.0-x64.bin
-sudo ./atlassian-jira-software-8.10.0-x64.bin
-# в ходе установки указываем директории /home/atlassian/jira и /home/atlassian/application-data/jira, порты 11313 и 11315 и соглашаемся на установку системного демона (y)
+sudo chmod a+x atlassian-jira-software-8.11.0-x64.bin
+sudo ./atlassian-jira-software-8.11.0-x64.bin
+# в ходе установки указываем директории /home/atlassian/jira и /home/atlassian/application-data/jira, порты 17312 и 17316 и соглашаемся на установку системного демона (y)
 # команды для управления
 sudo service jira <start | stop | restart>
 systemctl  <start | stop | status | restart> jira.service
@@ -760,18 +764,89 @@ systemctl  <start | stop | status | restart> jira.service
 /home/atlassian/jira/conf/server.xmly
 ```
 
-Далее переходим к настройке jira в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и данные нового пользователя. 
+Далее переходим к настройке jira в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и в качестве базового URL [https://jira.ln] можем указать домен, который создадим далее, а также данные нового пользователя. 
+
+Создаем сертификат для выбранного URL:
+```
+cd /home/certs
+./create_certificate_for_domain.sh jira.ln
+```
+
+Настраиваем NGINX для проксирования на выбранный домен:
+`nano /etc/nginx/sites-available/jira.conf`
+Добавляем следующий конфиг
+```nginx
+server {
+        listen 80;
+        server_name jupyter.ln;
+        return 302 https://$host$request_uri;
+}
+
+server {
+        listen 443;
+        ssl on;
+        server_name jupyter.ln;
+
+        ssl_certificate /home/certs/jupyter.ln/jupyter.ln.crt;
+        ssl_certificate_key /home/certs/jupyter.ln/device.key;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+        ssl_dhparam /etc/nginx/dhparam.pem;
+	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+        ssl_session_timeout 5m;
+        ssl_stapling on;
+        ssl_stapling_verify on;
+	
+        add_header Strict-Transport-Security max-age=15768000;
+        server_tokens off;
+	
+        location / {
+                proxy_pass http://17.10.1.1:9090;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header   X-Forwarded-Host $server_name;
+                proxy_set_header   X-Forwarded-Proto https;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_read_timeout 86400;
+        }
+
+        client_max_body_size 50M;
+        error_log /var/log/nginx/error.log;
+
+        location ~* /(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/? {
+                proxy_pass http://17.10.1.1:9090;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade "websocket";
+                proxy_set_header Connection "upgrade";
+                proxy_read_timeout 86400;
+        }
+}
+```
+Активируем конфиг и перезапускаем nginx:
+```
+ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.conf
+systemctl restart nginx
+```
+
+
+
 
 ### Установка Confluence
 
 ```
 # скачиваем установочный пакет
 mkdir /opt/confluence/ && cd /opt/confluence/
-sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.6.0-x64.bin
+# стоит проверить версию здесь https://www.atlassian.com/ru/software/confluence/download
+sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.6.1-x64.bin
 # даем права на исполнение и устанавливаем
-sudo chmod a+x atlassian-confluence-7.6.0-x64.bin
-sudo ./atlassian-confluence-7.6.0-x64.bin
-# в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 11312 и 11314 и соглашаемся на установку системного демона (y)
+sudo chmod a+x atlassian-confluence-7.6.1-x64.bin
+sudo ./atlassian-confluence-7.6.1-x64.bin
+# в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 11314 и 11318 и соглашаемся на установку системного демона (y)
 
 # команды для управления
 sudo service confluence <start | stop | restart>
