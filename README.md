@@ -862,7 +862,7 @@ server {
 
 Активируем конфиг и перезапускаем nginx:
 ```
-ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.conf
+ln -s /etc/nginx/sites-available/jira.conf /etc/nginx/sites-enabled/jira.conf
 systemctl restart nginx
 ```
 
@@ -923,6 +923,8 @@ sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassi
 sudo chmod a+x atlassian-confluence-7.6.1-x64.bin
 sudo ./atlassian-confluence-7.6.1-x64.bin
 # в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 17314 и 17318 и соглашаемся на установку системного демона (y)
+# на вопрос Start Confluence now? отвечаем n
+# перед первым запуском изменим настройки
 # откроем требуемые порты 
 ufw allow 17314/tcp
 ufw allow 17318/tcp
@@ -966,9 +968,18 @@ systemctl restart dnsmasq
 Так как мы используем собственные сертификаты для SSl/HTTPS, нам необходимо добавить самоподписанный сертификат для выбранного домена в keystore для java tomcat. Для этого нужно преобразовать ранее выпущенный сертификат и затем его добавить. При преобразовании сертификата нас попросят ввести пароль, который мы используем в следующей команде при добавлении после ключа -srcstorepass - нужно заменить src-changeit на введенный пароль при конвертировании ключа. По умолчанию confluence keystore имеет пароль changeit.
 
 ```
-openssl pkcs12 -export -in confluence.ln/confluence.ln.crt -inkey confluence.ln/device.key -out servkeystore.p12 -name ca -CAfile rootCA.crt -caname root
+openssl pkcs12 -export -in jira.ln/jira.ln.crt -inkey jira.ln/device.key -out jservkeystore.p12 -name jira -CAfile rootCA.crt -caname root
+
+keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
 
 keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
+
+
+
+keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
+
+keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
+
 ```
 
 
@@ -983,8 +994,8 @@ mkdir /var/log/nginx/confluence
 
 Добавляем следующий конфиг
 ```nginx
-proxy_cache_path /var/cache/nginx/confluence levels=1:2 keys_zone=confluence-cache:50m
-max_size=50m inactive=1440m;
+# proxy_cache_path /var/cache/nginx/confluence levels=1:2 keys_zone=confluence-cache:50m
+# max_size=50m inactive=1440m;
 
 #SSL LISTENER
 upstream atlassian-confluence {
@@ -1016,15 +1027,15 @@ server {
         client_max_body_size 50M;
 
         ## Proxy settings
-        proxy_max_temp_file_size    0;
-        proxy_connect_timeout      900;
-        proxy_send_timeout         900;
-        proxy_read_timeout         900;
-        proxy_buffer_size          4k;
-        proxy_buffers              4 32k;
-        proxy_busy_buffers_size    64k;
-        proxy_temp_file_write_size 64k;
-        proxy_intercept_errors     on;
+#        proxy_max_temp_file_size    0;
+#        proxy_connect_timeout      900;
+#        proxy_send_timeout         900;
+#        proxy_read_timeout         900;
+#        proxy_buffer_size          4k;
+#        proxy_buffers              4 32k;
+#        proxy_busy_buffers_size    64k;
+#        proxy_temp_file_write_size 64k;
+#        proxy_intercept_errors     on;
 
         proxy_cache confluence-cache;
         proxy_cache_key "$scheme://$host$request_uri";
@@ -1051,19 +1062,19 @@ server {
 
 Активируем конфиг и перезапускаем nginx:
 ```
-ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.conf
+ln -s /etc/nginx/sites-available/confluence.conf /etc/nginx/sites-enabled/confluence.conf
 systemctl restart nginx
 ```
 
-Далее настраиваем Jira:
-`nano /home/atlassian/jira/conf/server.xml`
+Далее настраиваем Confluence:
+`nano /home/atlassian/confluence/conf/server.xml`
 Необходимо закоментировать коннектор под http, а затем раскоментировать и исправить следующее:
-```
-        <Connector port="17312" relaxedPathChars="[]|" relaxedQueryChars="[]|{}^&#x5c;&#x60;&quot;&lt;&gt;"
-                   maxThreads="150" minSpareThreads="25" connectionTimeout="20000" enableLookups="false"
-                   maxHttpHeaderSize="8192" protocol="HTTP/1.1" useBodyEncodingForURI="true" redirectPort="8443"
-                   acceptCount="100" disableUploadTimeout="true" bindOnInit="false" secure="true" scheme="https"
-                   proxyName="jira.ln" proxyPort="443"/>
+```xml
+        <Connector port="17314" connectionTimeout="20000" redirectPort="8443"
+                   maxThreads="48" minSpareThreads="10"
+                   enableLookups="false" acceptCount="10" debug="0" URIEncoding="UTF-8"
+                   protocol="org.apache.coyote.http11.Http11NioProtocol"
+                   scheme="https" secure="true" proxyName="confluence.ln" proxyPort="443"/>
 ```
 
 ==================================================================================
@@ -1084,7 +1095,7 @@ lsof -i :443
 
 Посмотреть пользователя, который является системным для Jira можно так:
 ```
-nano /home/atlassian/jira/bin/user.sh
+nano /home/atlassian/confluence/bin/user.sh
 ```
 
 Если использовался не самоподписанный сертификат, однако при открытии Dashboard появляется ошибка 500 при загрузке Jira Gadgets, следует проверить BASE_URL в настройках Jira в панели администрирования, и если всё в порядке, то следует добавить полученный сертификат в keystore.
