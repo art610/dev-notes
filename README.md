@@ -820,7 +820,8 @@ server {
         add_header Strict-Transport-Security max-age=15768000;
         server_tokens off;
 
-        access_log /var/log/nginx/jira/jira.access.log;
+	# access_log off;
+        access_log /var/log/nginx/jira/jira.access.log;		
         error_log /var/log/nginx/jira/jira.error.log;
 
         client_max_body_size 50M;
