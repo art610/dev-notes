@@ -922,7 +922,10 @@ sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassi
 # даем права на исполнение и устанавливаем
 sudo chmod a+x atlassian-confluence-7.6.1-x64.bin
 sudo ./atlassian-confluence-7.6.1-x64.bin
-# в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 11314 и 11318 и соглашаемся на установку системного демона (y)
+# в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 17314 и 17318 и соглашаемся на установку системного демона (y)
+# откроем требуемые порты 
+ufw allow 17314/tcp
+ufw allow 17318/tcp
 
 # команды для управления
 sudo service confluence <start | stop | restart>
@@ -933,14 +936,159 @@ systemctl  <start | stop | status | restart> confluence.service
 # конфиг сервера
 /home/atlassian/confluence/conf/server.xml
 
-# для полного удаления выполнить следующее
+# при необходимости для полного удаления выполнить следующее
 systemctl  stop confluence.service
 cd /home/atlassian/confluence/
 sudo chmod a+x uninstall
 ./uninstall
 ```
 
-Далее переходим к настройке Confluence в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и данные нового пользователя. 
+Далее переходим к настройке Confluence в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и в качестве базового URL [https://confluence.ln] можем указать домен, который создадим далее, а также данные нового пользователя. Если при интеграции с Jira появляется ошибка "Отказано в доступе", то как правило проблема в самоподписанном сертификате, который нужно добавить в keystore confluence, так же как ранее это было сделано для Jira.
+
+Создаем сертификат для выбранного URL:
+```
+cd /home/certs
+./create_certificate_for_domain.sh confluence.ln
+```
+
+Отметим также, что был взят домен confluence.ln потому, как домен wiki.ln используем для Wikijs.
+Добавим домен и перезапустим DNS: 
+```
+# редактируем хосты
+nano /etc/hosts
+# добавляем запись с доменом
+17.10.1.1       confluence confluence.ln
+# сохраняем и перезапускаем DNS
+systemctl restart dnsmasq
+```
+
+
+Так как мы используем собственные сертификаты для SSl/HTTPS, нам необходимо добавить самоподписанный сертификат для выбранного домена в keystore для java tomcat. Для этого нужно преобразовать ранее выпущенный сертификат и затем его добавить. При преобразовании сертификата нас попросят ввести пароль, который мы используем в следующей команде при добавлении после ключа -srcstorepass - нужно заменить src-changeit на введенный пароль при конвертировании ключа. По умолчанию confluence keystore имеет пароль changeit.
+
+```
+openssl pkcs12 -export -in confluence.ln/confluence.ln.crt -inkey confluence.ln/device.key -out servkeystore.p12 -name ca -CAfile rootCA.crt -caname root
+
+keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
+```
+
+
+Создадим директории для логов и кэша:
+```
+mkdir /var/cache/nginx/confluence
+mkdir /var/log/nginx/confluence
+```
+
+Настраиваем NGINX для проксирования на выбранный домен:
+`nano /etc/nginx/sites-available/confluence.conf`
+
+Добавляем следующий конфиг
+```nginx
+proxy_cache_path /var/cache/nginx/confluence levels=1:2 keys_zone=confluence-cache:50m
+max_size=50m inactive=1440m;
+
+#SSL LISTENER
+upstream atlassian-confluence {
+        server 127.0.0.1:17314 fail_timeout=0;
+}
+
+server {
+        listen 443 ssl;
+        listen [::]:443 ssl;
+
+        ssl on;
+        server_name confluence.ln;
+	set $server_url 'confluence.ln';
+	
+        ssl_certificate     /home/certs/confluence.ln/confluence.ln.crt;
+        ssl_certificate_key /home/certs/confluence.ln/device.key;
+
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+        ssl_dhparam /etc/nginx/dhparam.pem;
+	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';	
+        add_header Strict-Transport-Security max-age=15768000;
+        server_tokens off;
+
+	access_log off;
+        # access_log /var/log/nginx/confluence/confluence.access.log;		
+        error_log /var/log/nginx/confluence/confluence.error.log;
+
+        client_max_body_size 50M;
+
+        ## Proxy settings
+        proxy_max_temp_file_size    0;
+        proxy_connect_timeout      900;
+        proxy_send_timeout         900;
+        proxy_read_timeout         900;
+        proxy_buffer_size          4k;
+        proxy_buffers              4 32k;
+        proxy_busy_buffers_size    64k;
+        proxy_temp_file_write_size 64k;
+        proxy_intercept_errors     on;
+
+        proxy_cache confluence-cache;
+        proxy_cache_key "$scheme://$host$request_uri";
+        proxy_cache_min_uses 1;
+        proxy_cache_valid 1440m;
+        auth_basic off;
+	
+        location / {
+                proxy_pass http://17.10.1.1:17314;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Host $server_name;
+                proxy_set_header X-Forwarded-Server $host;
+
+                set $do_not_cache 0;
+                if ($request_uri ~* ^(/secure/admin|/plugins|/secure/projects|/projects|/admin)) {
+                        set $do_not_cache 1;
+                }
+                proxy_cache_bypass $do_not_cache;
+        }
+}
+```
+
+Активируем конфиг и перезапускаем nginx:
+```
+ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.conf
+systemctl restart nginx
+```
+
+Далее настраиваем Jira:
+`nano /home/atlassian/jira/conf/server.xml`
+Необходимо закоментировать коннектор под http, а затем раскоментировать и исправить следующее:
+```
+        <Connector port="17312" relaxedPathChars="[]|" relaxedQueryChars="[]|{}^&#x5c;&#x60;&quot;&lt;&gt;"
+                   maxThreads="150" minSpareThreads="25" connectionTimeout="20000" enableLookups="false"
+                   maxHttpHeaderSize="8192" protocol="HTTP/1.1" useBodyEncodingForURI="true" redirectPort="8443"
+                   acceptCount="100" disableUploadTimeout="true" bindOnInit="false" secure="true" scheme="https"
+                   proxyName="jira.ln" proxyPort="443"/>
+```
+
+==================================================================================
+?Далее требуется пробросить порты через iptables с 80 на 8080 и с 443 на 8443
+```
+/sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 443 -j  REDIRECT --to-port 8443
+```
+
+Проверим порты при помощи:
+```
+lsof -i :80
+lsof -i :8080
+lsof -i :8443
+lsof -i :443
+```
+=====================================================================================
+
+
+Посмотреть пользователя, который является системным для Jira можно так:
+```
+nano /home/atlassian/jira/bin/user.sh
+```
+
+Если использовался не самоподписанный сертификат, однако при открытии Dashboard появляется ошибка 500 при загрузке Jira Gadgets, следует проверить BASE_URL в настройках Jira в панели администрирования, и если всё в порядке, то следует добавить полученный сертификат в keystore.
+
 
 Стоит также установить плагин Draw.io для создания диаграмм в Confluence. В управлении приложениями можно включить стандартные макросы HTML (по умолчанию они отключены). Не забываем их отключить при установке на production сервер.
 
