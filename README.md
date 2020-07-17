@@ -863,7 +863,24 @@ ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.c
 systemctl restart nginx
 ```
 
+Далее настраиваем Jira:
+`nano /home/atlassian/jira/conf/server.xml`
+Необходимо закоментировать коннектор под http, а затем раскоментировать и исправить следующее:
+```
+        <Connector port="17312" relaxedPathChars="[]|" relaxedQueryChars="[]|{}^&#x5c;&#x60;&quot;&lt;&gt;"
+                   maxThreads="150" minSpareThreads="25" connectionTimeout="20000" enableLookups="false"
+                   maxHttpHeaderSize="8192" protocol="HTTP/1.1" useBodyEncodingForURI="true" redirectPort="8443"
+                   acceptCount="100" disableUploadTimeout="true" bindOnInit="false" secure="true" scheme="https"
+                   proxyName="jira.ln" proxyPort="443"/>
+```
 
+Далее требуется пробросить порты через iptables с 80 на 8080 и с 443 на 8443
+```
+/sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 80 -j  REDIRECT --to-port 8080
+/sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 443 -j  REDIRECT --to-port 8443
+```
+
+Стоит заметить, что далее Seafile WebDav (SeaDav) будет по умолчанию пытаться использовать порт 8080, который также использует Jira, поэтому его стоит изменить в настройках Seafile (seadav.conf) и в конфиге NGINX.
 
 
 ### Установка Confluence
