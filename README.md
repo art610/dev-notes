@@ -505,12 +505,14 @@ https://linuxize.com/post/how-to-install-xrdp-on-debian-10/
 
 ```
 # переходим в консоль по Ctrl+Alt+F1
+# установим aptitude если не установлено
+sudo apt-get install aptitude
 # определим имя графического менеджера
 aptitude search '~i~Px-display-manager'
 # перейдем в многопользовательский режим 
 systemctl set-default multi-user.target
-# управление менеджером графики
-sudo service lightdm <stop | start | restart> 
+# остановим менеджер графики
+sudo service lightdm stop 	# управление: <stop | start | restart> 
 # просмотр текущего режима
 systemctl get-default
 # включение графического интерфейса
@@ -657,6 +659,16 @@ netstat -nlp | grep 5432
 ```
 
 ### Run WikiJS as service
+
+Добавим отдельного пользователя:
+```
+# создадим нового пользователя
+useradd --system --comment "Jupyter Lb" jupyter --home-dir  /home/jupyter -m -U -s /bin/false
+# зададим пароль пользователя
+passwd jupyter
+# добавим пользователя в группу nginx
+usermod -a -G jupyter www-data
+```
 
 ```
 # Create a new file named wiki.service inside directory /etc/systemd/system
@@ -939,7 +951,7 @@ service nginx restart
 apt-get install -y mariadb-server
 service mysql start
 
-mysqladmin -u root password g6O9DVxi8$n6 	# <root-password>
+mysqladmin -u root password <root-password> 
 
 # теперь настроим безопасное подключение к БД
 sudo mysql_secure_installation 	# только на смену пароля отвечаем No
