@@ -1692,6 +1692,16 @@ systemctl restart nginx
 
 # Установка JupyterLab
 
+Добавим отдельного пользователя:
+```
+# создадим нового пользователя
+useradd --system --comment "Jupyter Lb" jupyter --home-dir  /home/jupyter -m -U -s /bin/false
+# зададим пароль пользователя
+passwd jupyter
+# добавим пользователя в группу nginx
+usermod -a -G jupyter www-data
+```
+
 Используем менеджер pip:
 ```
 # устанавливаем и обновляем jupyterlab
@@ -1718,7 +1728,7 @@ Type=oneshot    # or forking / simple
 ExecStart=/usr/local/bin/jupyter lab --ip 17.10.1.1 --port 9090
 ExecStop=/usr/local/bin/jupyter lab stop
 WorkingDirectory=/home/jupyter/
-User=art610
+User=jupyter
 RemainAfterExit=yes
 Restart=on-failure
 RestartSec=10
@@ -1734,31 +1744,86 @@ systemctl enable jupyter
 
 # make home dir for workspace
 mkdir /home/jupyter
-chown -R art610:art610 /home/jupyter
+chown -R jupyter:jupyter /home/jupyter
 
 # restart 
 systemctl restart jupyter
+
+
+# получить токен от созданного пользователя можно будет так
+sudo -u jupyter jupyter notebook list
 
 # generate config and add password
 jupyter lab --generate-config	# like user
 jupyter notebook password 	# like root
 ```
 
-Добавим отдельного пользователя:
+Конфигурация NGINX для SSL (не забываем выпустить сертификат):
+`nano /etc/nginx/sites-available/jupyter.conf`
+
+```nginx
+server {
+        listen 80;
+        server_name jupyter.ln;
+        return 302 https://$host$request_uri;
+}
+
+server {
+        listen 443;
+        ssl on;
+        server_name jupyter.ln;
+
+        ssl_certificate /home/certs/jupyter.ln/jupyter.ln.crt;
+        ssl_certificate_key /home/certs/jupyter.ln/device.key;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+        ssl_dhparam /etc/nginx/dhparam.pem;
+	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+        ssl_session_timeout 5m;
+        ssl_stapling on;
+        ssl_stapling_verify on;
+	
+        add_header Strict-Transport-Security max-age=15768000;
+        server_tokens off;
+	
+        location / {
+                proxy_pass http://17.10.1.1:9090;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header   X-Forwarded-Host $server_name;
+                proxy_set_header   X-Forwarded-Proto https;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_read_timeout 86400;
+        }
+
+        client_max_body_size 50M;
+        error_log /var/log/nginx/error.log;
+
+        location ~* /(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/? {
+                proxy_pass http://17.10.1.1:9090;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade "websocket";
+                proxy_set_header Connection "upgrade";
+                proxy_read_timeout 86400;
+        }
+}
 ```
-# создадим нового пользователя
-useradd --system --comment "Jupyter Lb" jupyter --home-dir  /home/jupyter -m -U -s /bin/false
-# зададим пароль пользователя
-passwd jupyter
-# добавим пользователя в группу nginx
-usermod -a -G jupyter www-data
-# исправим пользователя в /etc/systemd/system/jupyter.service
-# применим изменения
-systemctl daemon-reload
-systemctl restart jupyter
-# получить токен от созданного пользователя
-sudo -u jupyter jupyter notebook list
+
+Активируем конфиг и перезагрузим nginx:
 ```
+ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.conf
+systemctl restart nginx
+```
+
+
+
+
+
 
 ## DynDNS
 
