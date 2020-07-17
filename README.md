@@ -803,10 +803,18 @@ server {
         return 302 https://$host$request_uri;
 }
 
+#SSL LISTENER
+upstream atlassian-jira {
+        server 127.0.0.1:8080 fail_timeout=0;
+}
+
 server {
-        listen 443;
+        listen 443 ssl;
+        listen [::]:443 ssl;
+
         ssl on;
         server_name jira.ln;
+	set $server_url 'jira.ln';
 	
         ssl_certificate     /home/certs/jira.ln/jira.ln.crt;
         ssl_certificate_key /home/certs/jira.ln/device.key;
@@ -874,9 +882,9 @@ systemctl restart nginx
                    proxyName="jira.ln" proxyPort="443"/>
 ```
 
+==================================================================================
 ?Далее требуется пробросить порты через iptables с 80 на 8080 и с 443 на 8443
 ```
-/sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 80 -j  REDIRECT --to-port 8080
 /sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 443 -j  REDIRECT --to-port 8443
 ```
 
@@ -887,9 +895,24 @@ lsof -i :8080
 lsof -i :8443
 lsof -i :443
 ```
+=====================================================================================
 
-Стоит заметить, что далее Seafile WebDav (SeaDav) будет по умолчанию пытаться использовать порт 8080, который также использует Jira, поэтому его стоит изменить в настройках Seafile (seadav.conf) и в конфиге NGINX.
+Так как мы используем собственные сертификаты для SSl/HTTPS, нам необходимо добавить самоподписанный сертификат для выбранного домена в keystore для java tomcat. Для этого нужно преобразовать ранее выпущенный сертификат и затем его добавить. При преобразовании сертификата нас попросят ввести пароль, который мы используем в следующей команде при добавлении после ключа -srcstorepass - нужно заменить src-changeit на введенный пароль при конвертировании ключа. По умолчанию jira keystore имеет пароль changeit.
 
+```
+openssl pkcs12 -export -in jira.ln/jira.ln.crt -inkey jira.ln/device.key \
+               -out servkeystore.p12 -name ca \
+               -CAfile rootCA.crt -caname root
+
+keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 \
+			-destkeystore /home/atlassian/jira/jre/lib/security/cacerts 
+			-deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass src-changeit -validity 3650
+```
+
+Посмотреть пользователя, который является системным для Jira можно так:
+```
+nano /home/atlassian/jira/bin/user.sh
+```
 
 ### Установка Confluence
 
