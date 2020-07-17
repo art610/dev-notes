@@ -772,61 +772,81 @@ cd /home/certs
 ./create_certificate_for_domain.sh jira.ln
 ```
 
+Создадим директории для логов и кэша:
+```
+mkdir /var/cache/nginx
+mkdir /var/cache/nginx/jira
+mkdir /var/log/nginx/jira
+```
+
 Настраиваем NGINX для проксирования на выбранный домен:
 `nano /etc/nginx/sites-available/jira.conf`
+
 Добавляем следующий конфиг
 ```nginx
+proxy_cache_path /var/cache/nginx/jira levels=1:2 keys_zone=jira-cache:50m
+max_size=50m inactive=1440m;
+
 server {
         listen 80;
-        server_name jupyter.ln;
+        server_name jira.ln;
         return 302 https://$host$request_uri;
 }
 
 server {
         listen 443;
         ssl on;
-        server_name jupyter.ln;
+        server_name jira.ln;
+	
+        ssl_certificate     /home/certs/jira.ln/jira.ln.crt;
+        ssl_certificate_key /home/certs/jira.ln/device.key;
 
-        ssl_certificate /home/certs/jupyter.ln/jupyter.ln.crt;
-        ssl_certificate_key /home/certs/jupyter.ln/device.key;
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
         ssl_prefer_server_ciphers on;
         ssl_dhparam /etc/nginx/dhparam.pem;
-	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
-        ssl_session_timeout 5m;
-        ssl_stapling on;
-        ssl_stapling_verify on;
-	
+	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';	
         add_header Strict-Transport-Security max-age=15768000;
         server_tokens off;
-	
-        location / {
-                proxy_pass http://17.10.1.1:9090;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header   X-Forwarded-Host $server_name;
-                proxy_set_header   X-Forwarded-Proto https;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-                proxy_read_timeout 86400;
-        }
+
+        access_log /var/log/nginx/jira/jira.access.log;
+        error_log /var/log/nginx/jira/jira.error.log;
 
         client_max_body_size 50M;
-        error_log /var/log/nginx/error.log;
 
-        location ~* /(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/? {
-                proxy_pass http://17.10.1.1:9090;
-                proxy_set_header X-Real-IP $remote_addr;
+        ## Proxy settings
+        proxy_max_temp_file_size    0;
+        proxy_connect_timeout      900;
+        proxy_send_timeout         900;
+        proxy_read_timeout         900;
+        proxy_buffer_size          4k;
+        proxy_buffers              4 32k;
+        proxy_busy_buffers_size    64k;
+        proxy_temp_file_write_size 64k;
+        proxy_intercept_errors     on;
+
+        proxy_cache jira-cache;
+        proxy_cache_key "$scheme://$host$request_uri";
+        proxy_cache_min_uses 1;
+        proxy_cache_valid 1440m;
+        auth_basic off;
+	
+        location / {
+                proxy_pass http://17.10.1.1:17312;
                 proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade "websocket";
-                proxy_set_header Connection "upgrade";
-                proxy_read_timeout 86400;
+                proxy_set_header X-Forwarded-Host $server_name;
+                proxy_set_header X-Forwarded-Server $host;
+
+                set $do_not_cache 0;
+                if ($request_uri ~* ^(/secure/admin|/plugins|/secure/projects|/projects|/admin)) {
+                        set $do_not_cache 1;
+                }
+                proxy_cache_bypass $do_not_cache;
         }
 }
 ```
+
 Активируем конфиг и перезапускаем nginx:
 ```
 ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.conf
