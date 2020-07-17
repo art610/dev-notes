@@ -874,10 +874,18 @@ systemctl restart nginx
                    proxyName="jira.ln" proxyPort="443"/>
 ```
 
-Далее требуется пробросить порты через iptables с 80 на 8080 и с 443 на 8443
+?Далее требуется пробросить порты через iptables с 80 на 8080 и с 443 на 8443
 ```
 /sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 80 -j  REDIRECT --to-port 8080
 /sbin/iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1,127.0.0.1 --dport 443 -j  REDIRECT --to-port 8443
+```
+
+Проверим порты при помощи:
+```
+lsof -i :80
+lsof -i :8080
+lsof -i :8443
+lsof -i :443
 ```
 
 Стоит заметить, что далее Seafile WebDav (SeaDav) будет по умолчанию пытаться использовать порт 8080, который также использует Jira, поэтому его стоит изменить в настройках Seafile (seadav.conf) и в конфиге NGINX.
