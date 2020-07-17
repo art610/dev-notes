@@ -772,6 +772,16 @@ cd /home/certs
 ./create_certificate_for_domain.sh jira.ln
 ```
 
+Добавим домен и перезапустим DNS: 
+```
+# редактируем хосты
+nano /etc/hosts
+# добавляем запись с доменом
+17.10.1.1       jira jira.ln
+# сохраняем и перезапускаем DNS
+systemctl restart dnsmasq
+```
+
 Создадим директории для логов и кэша:
 ```
 mkdir /var/cache/nginx
