@@ -918,6 +918,7 @@ nano /home/atlassian/jira/bin/user.sh
 
 Если при перезагрузке системы Jira не запускается автоматически, то смотрим инструкцию:
 https://confluence.atlassian.com/jirakb/start-jira-applications-automatically-in-linux-828796713.html
+https://community.atlassian.com/t5/Jira-Software-questions/Jira-autostart-problem-on-Debian-9/qaq-p/624909
 
 ### Установка Confluence
 
