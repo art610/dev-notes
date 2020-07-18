@@ -491,16 +491,6 @@ https://habr.com/ru/post/77191/
 https://mywebpc.ru/windows/wake-on-lan-v-windows/
 https://userello.ru/internet/chto-takoe-wake-lan-i-kak-ego-vklyuchit
 
-### Настройка iptables
-
-https://1cloud.ru/help/linux/nastrojka_linus-firewall_iptables
-
-### VNC, XRDP and Teamviewer
-
-https://habr.com/ru/post/76237/
-https://www.teamviewer.com/ru/%d0%bf%d1%80%d0%be%d0%b4%d1%83%d0%ba%d1%82%d1%8b/teamviewer/
-https://linuxize.com/post/how-to-install-xrdp-on-debian-10/
-
 ### Отключение графического интерфейса сервера
 
 ```
@@ -603,46 +593,6 @@ Offline Mode
 offline: true
 ```
 
- HTTPS
- You need both the private key (key) and certificate (cert) in PEM format
- ```
- ssl:
-  enabled: true
-  port: 3443
-  provider: custom
-
-  format: pem
-  key: path/to/key.pem
-  cert: path/to/cert.pem
-  passphrase: null
-  dhparam: null
- ```
- 
- It's also possible to use a PFX (pem) formatted certificate instead:
- ```
- ssl:
-  enabled: true
-  port: 3443
-  provider: custom
-
-  format: pfx
-  pfx: path/to/cert.pfx
-  passphrase: null
-  dhparam: null
- ```
-
-Let's Encrypt allows for free, automated and auto-renewing SSL certificates for your wiki
-```
-ssl:
-  enabled: true
-  port: 3443
-  provider: letsencrypt
-
-  domain: wiki.yourdomain.com
-  subscriberEmail: admin@example.com
-```
-
-Once your HTTPS is up and working correctly, you can enable HTTP to HTTPS redirection under the Administration Area > SSL.
 
 More configs on https://docs.requarks.io/install/config
 
@@ -663,11 +613,12 @@ netstat -nlp | grep 5432
 Добавим отдельного пользователя:
 ```
 # создадим нового пользователя
-useradd --system --comment "Jupyter Lb" jupyter --home-dir  /home/jupyter -m -U -s /bin/false
+useradd --system --comment "WikiJS User" wikiuser --home-dir  /home/wiki -m -U -s /bin/false
+chown wikiuser:wikiuser -R /home/wiki
 # зададим пароль пользователя
-passwd jupyter
+passwd wikiuser	# 1@7OrIX7Fp6v
 # добавим пользователя в группу nginx
-usermod -a -G jupyter www-data
+usermod -a -G wikiuser www-data
 ```
 
 ```
@@ -686,15 +637,12 @@ ExecStart=/usr/bin/node /home/wiki/server
 
 # Restart=always
 # Consider creating a dedicated user for Wiki.js here:
-User=art610
+User=wikiuser
 Environment=NODE_ENV=production
 WorkingDirectory=/home/wiki
 
 [Install]
 WantedBy=multi-user.target
-
-# Add rights for user
-sudo chown art610:art610 -R /home/wiki
 
 # Reload systemd
 systemctl daemon-reload
