@@ -1106,7 +1106,6 @@ nano /etc/hosts
 # перезапустим dns
 service dnsmasq restart
 
-
 # редактируем конфиг
 sudo nano /etc/gitlab/gitlab.rb
 # указываем в следующей строке доменное имя или ip-адрес
@@ -1154,24 +1153,13 @@ gitlab-ctl pg-password-md5 gitlab
 sudo nano /etc/gitlab/gitlab.rb
 
 # добавим настройки базы данных
-postgresql['enable'] = true
-postgresql['listen_address'] = '127.0.0.1'
-postgresql['port'] = 5432
-postgresql['md5_auth_cidr_addresses'] = %w()
-postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24)
-postgresql['sql_user'] = "gitlabusr"
-
-##! SQL_USER_PASSWORD_HASH can be generated using the command `gitlab-ctl pg-password-md5 gitlab`,
-##! where `gitlab` is the name of the SQL user that connects to GitLab.
-postgresql['sql_user_password'] = "SQL_USER_PASSWORD_HASH"
-
-# force ssl on all connections defined in trust_auth_cidr_addresses and md5_auth_cidr_addresses
-postgresql['hostssl'] = false
-
 gitlab_rails['db_host'] = '127.0.0.1'
 gitlab_rails['db_port'] = 5432
 gitlab_rails['db_username'] = "gitlabusr"
 gitlab_rails['db_password'] = "bFET9BD7!Wwc"
+
+# force ssl on all connections defined in trust_auth_cidr_addresses and md5_auth_cidr_addresses
+postgresql['hostssl'] = false
 ```
 
 Добавим Redis:
@@ -1223,6 +1211,151 @@ gitlab-ctl tail
 ```
 
 При первой загрузке страницы GitLab будет предложено ввести новый пароль для пользователя root, при помощи которого можно получить доступ к Admin Area. Если есть проблемы с доступом через localhost, то стоит его добавить в Admin Area -> Settings -> Network -> Outbound requests -> установить галочку Allow requests to the local network from web hooks and services и в поле ниже ввести хост сервера (127.0.0.1 и т.п.), можно также указывать конкретный порт.
+
+Выпустим сертификат:
+```
+cd /home/certs
+./create_certificate_for_domain.sh gitlab.ln
+```
+
+Теперь закончим настроку NGINX, добавив следующий конфиг:
+`nano /etc/nginx/sites-available/gitlab.conf`
+
+```nginx
+upstream gitlab-workhorse {
+	server unix:/var/opt/gitlab/gitlab-workhorse/socket;
+}
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name gitlab.ln;
+	return 302 https://$host$request_uri;
+}
+
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+	ssl on;
+	server_name gitlab.ln;
+    
+	ssl_certificate     /home/certs/gitlab.ln/gitlab.ln.crt;
+    ssl_certificate_key /home/certs/gitlab.ln/device.key;
+
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    ssl_dhparam /etc/nginx/dhparam.pem;
+	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';	
+    add_header Strict-Transport-Security max-age=15768000;
+    server_tokens off;
+	
+	proxy_set_header X-Forwarded-For $remote_addr;
+    client_max_body_size 250m;
+	
+	root /opt/gitlab/embedded/service/gitlab-rails/public;
+
+	access_log  /var/log/gitlab/nginx/gitlab_access.log;
+    error_log   /var/log/gitlab/nginx/gitlab_error.log;
+        
+    location / {
+                proxy_redirect off;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+				proxy_set_header X-Forwarded-Host $server_name;
+                proxy_set_header X-Forwarded-Server $host;
+                proxy_pass http://gitlab-workhorse;
+    }
+
+	location ~ ^/[\w\.-]+/[\w\.-]+/(info/refs|git-upload-pack|git-receive-pack)$ {
+		# 'Error' 418 is a hack to re-use the @gitlab-workhorse block
+		error_page 418 = @gitlab-workhorse;
+		return 418;
+	}
+	location ~ ^/[\w\.-]+/[\w\.-]+/repository/archive {
+		# 'Error' 418 is a hack to re-use the @gitlab-workhorse block
+		error_page 418 = @gitlab-workhorse;
+		return 418;
+	}
+	location ~ ^/api/v3/projects/.*/repository/archive {
+		# 'Error' 418 is a hack to re-use the @gitlab-workhorse block
+		error_page 418 = @gitlab-workhorse;
+		return 418;
+	}
+	# Build artifacts should be submitted to this location
+	location ~ ^/[\w\.-]+/[\w\.-]+/builds/download {
+		client_max_body_size 0;
+		# 'Error' 418 is a hack to re-use the @gitlab-workhorse block
+		error_page 418 = @gitlab-workhorse;
+		return 418;
+	}
+	# Build artifacts should be submitted to this location
+	location ~ /ci/api/v1/builds/[0-9]+/artifacts {
+		client_max_body_size 0;
+		# 'Error' 418 is a hack to re-use the @gitlab-workhorse block
+		error_page 418 = @gitlab-workhorse;
+		return 418;
+	}
+
+	location @gitlab-workhorse {
+		## https://github.com/gitlabhq/gitlabhq/issues/694
+		## Some requests take more than 30 seconds.
+		proxy_read_timeout      3600;
+		proxy_connect_timeout   300;
+		proxy_redirect          off;
+		# Do not buffer Git HTTP responses
+		proxy_buffering off;
+		proxy_set_header    Host                $http_host;
+		proxy_set_header    X-Real-IP           $remote_addr;
+		proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+		proxy_set_header    X-Forwarded-Proto   $scheme;
+		proxy_pass http://gitlab-workhorse;
+		## Pass chunked request bodies to gitlab-workhorse as-is
+		proxy_request_buffering off;
+		proxy_http_version 1.1;
+	}
+
+	error_page 502 /502.html;
+
+}
+```
+
+Активируем конфиг и перезапустим NGINX
+```
+ln -s /etc/nginx/sites-available/gitlab.conf /etc/nginx/sites-enabled/gitlab.conf
+service nginx restart
+```
+
+Итоговая конфигурация GitLab:
+`nano /etc/gitlab/gitlab.rb`
+
+```ruby
+# основные настройки GitLab
+external_url 'http://gitlab.ln'
+nginx['enable'] = false
+web_server['external_users'] = ['www-data']
+gitlab_rails['trusted_proxies'] = [ '127.0.0.1', '17.10.1.1' ]
+gitlab_workhorse['listen_network'] = "unix"
+gitlab_workhorse['listen_addr'] = "/var/opt/gitlab/gitlab-workhorse/socket"
+# настройки базы данных PostgreSQL
+postgresql['enable'] = false
+gitlab_rails['db_adapter'] = "postgresql"
+gitlab_rails['db_host'] = '127.0.0.1'
+gitlab_rails['db_port'] = 5432
+gitlab_rails['db_username'] = "gitlabusr"
+gitlab_rails['db_password'] = "bFET9BD7!Wwc"
+# настройки кэша
+redis['enable'] = false
+gitlab_rails['redis_host'] = '127.0.0.1'
+gitlab_rails['redis_port'] = 6379
+gitlab_rails['redis_password'] = 'bxP5xk%1LRx3'
+### переопределение порта puma
+puma['listen'] = '127.0.0.1'
+puma['port'] = 19000
+puma['socket'] = '/var/opt/gitlab/gitlab-rails/sockets/gitlab.socket'
+puma['pidfile'] = '/opt/gitlab/var/puma/puma.pid'
+puma['state_path'] = '/opt/gitlab/var/puma/puma.state'
+```
 
 
 # Install Seafile pro 7.1.5
