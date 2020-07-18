@@ -799,7 +799,7 @@ max_size=50m inactive=1440m;
 
 #SSL LISTENER
 upstream atlassian-jira {
-        server 127.0.0.1:8080 fail_timeout=0;
+        server 17.10.1.1:17312 fail_timeout=0;
 }
 
 server {
@@ -945,7 +945,7 @@ sudo chmod a+x uninstall
 ./uninstall
 ```
 
-Далее переходим к настройке Confluence в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и в качестве базового URL [https://confluence.ln] можем указать домен, который создадим далее, а также данные нового пользователя. Если при интеграции с Jira появляется ошибка "Отказано в доступе", то как правило проблема в самоподписанном сертификате, который нужно добавить в keystore confluence, так же как ранее это было сделано для Jira.
+Далее переходим к настройке Confluence в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и в качестве базового URL [https://confluence.ln] можем указать домен, который создадим далее, а также данные нового пользователя. Если при интеграции с Jira появляется ошибка "Отказано в доступе", то как правило проблема в самоподписанном сертификате, который нужно добавить в keystore confluence, так же как ранее это было сделано для Jira. При этом интеграцию стоит произвести после настройки Сonfluence, указав данные пользователя-администратора из Jira. Интагрцию производим потом при помощи Application Links в Jira, указав взаимную ссылку в Confluence (Раздел настроек: "Связи с приложениями").
 
 Создаем сертификат для выбранного URL:
 ```
@@ -970,14 +970,13 @@ systemctl restart dnsmasq
 ```
 openssl pkcs12 -export -in jira.ln/jira.ln.crt -inkey jira.ln/device.key -out jservkeystore.p12 -name jira -CAfile rootCA.crt -caname root
 
-keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
 
+# сертификаты для confluence
+keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
 keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
 
-
-
+# сертификаты для jira
 keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
-
 keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
 
 ```
@@ -999,7 +998,7 @@ mkdir /var/log/nginx/confluence
 
 #SSL LISTENER
 upstream atlassian-confluence {
-        server 127.0.0.1:17314 fail_timeout=0;
+        server 17.10.1.1:17314 fail_timeout=0;
 }
 
 server {
@@ -1093,13 +1092,12 @@ lsof -i :443
 =====================================================================================
 
 
-Посмотреть пользователя, который является системным для Jira можно так:
+Посмотреть пользователя, который является системным для Confluence можно так:
 ```
 nano /home/atlassian/confluence/bin/user.sh
 ```
 
 Если использовался не самоподписанный сертификат, однако при открытии Dashboard появляется ошибка 500 при загрузке Jira Gadgets, следует проверить BASE_URL в настройках Jira в панели администрирования, и если всё в порядке, то следует добавить полученный сертификат в keystore.
-
 
 Стоит также установить плагин Draw.io для создания диаграмм в Confluence. В управлении приложениями можно включить стандартные макросы HTML (по умолчанию они отключены). Не забываем их отключить при установке на production сервер.
 
