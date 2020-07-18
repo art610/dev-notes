@@ -916,6 +916,8 @@ nano /home/atlassian/jira/bin/user.sh
 
 Если использовался не самоподписанный сертификат, однако при открытии Dashboard появляется ошибка 500 при загрузке Jira Gadgets, следует проверить BASE_URL в настройках Jira в панели администрирования, и если всё в порядке, то следует добавить полученный сертификат в keystore.
 
+Если при перезагрузке системы Jira не запускается автоматически, то смотрим инструкцию:
+https://confluence.atlassian.com/jirakb/start-jira-applications-automatically-in-linux-828796713.html
 
 ### Установка Confluence
 
