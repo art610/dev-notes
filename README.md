@@ -993,10 +993,6 @@ mkdir /var/log/nginx/confluence
 
 Добавляем следующий конфиг
 ```nginx
-# proxy_cache_path /var/cache/nginx/confluence levels=1:2 keys_zone=confluence-cache:50m
-# max_size=50m inactive=1440m;
-
-#SSL LISTENER
 upstream atlassian-confluence {
         server 17.10.1.1:17314 fail_timeout=0;
 }
@@ -1019,27 +1015,21 @@ server {
         add_header Strict-Transport-Security max-age=15768000;
         server_tokens off;
 
-	access_log off;
-        # access_log /var/log/nginx/confluence/confluence.access.log;		
+	access_log off;		
         error_log /var/log/nginx/confluence/confluence.error.log;
 
-        client_max_body_size 50M;
+        client_max_body_size 500M;
 
         ## Proxy settings
-#        proxy_max_temp_file_size    0;
-#        proxy_connect_timeout      900;
-#        proxy_send_timeout         900;
-#        proxy_read_timeout         900;
-#        proxy_buffer_size          4k;
-#        proxy_buffers              4 32k;
-#        proxy_busy_buffers_size    64k;
-#        proxy_temp_file_write_size 64k;
-#        proxy_intercept_errors     on;
-
-        proxy_cache confluence-cache;
-        proxy_cache_key "$scheme://$host$request_uri";
-        proxy_cache_min_uses 1;
-        proxy_cache_valid 1440m;
+        proxy_max_temp_file_size    0;
+        proxy_connect_timeout      900;
+        proxy_send_timeout         900;
+        proxy_read_timeout         900;
+        proxy_buffer_size          4k;
+        proxy_buffers              4 32k;
+        proxy_busy_buffers_size    64k;
+        proxy_temp_file_write_size 64k;
+        proxy_intercept_errors     on;
         auth_basic off;
 	
         location / {
@@ -1049,12 +1039,7 @@ server {
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Host $server_name;
                 proxy_set_header X-Forwarded-Server $host;
-
-                set $do_not_cache 0;
-                if ($request_uri ~* ^(/secure/admin|/plugins|/secure/projects|/projects|/admin)) {
-                        set $do_not_cache 1;
-                }
-                proxy_cache_bypass $do_not_cache;
+		
         }
 }
 ```
@@ -1106,12 +1091,22 @@ nano /home/atlassian/confluence/bin/user.sh
 ```
 # установить требуемые зависимости
 sudo apt-get update
+# при установке postfix выбираем "Internet Site" и вводим домен для почты, например, mail.ln
 sudo apt-get install -y curl openssh-server ca-certificates postfix
 
 # добавить репозиторий
 curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash
 # установить gitlab-ce
 sudo apt-get install gitlab-ce
+
+# добавим домен
+nano /etc/hosts
+# добавляем
+17.10.1.1 gitlab gitlab.ln
+# перезапустим dns
+service dnsmasq restart
+
+
 # редактируем конфиг
 sudo nano /etc/gitlab/gitlab.rb
 # указываем в следующей строке доменное имя или ip-адрес
@@ -1128,6 +1123,16 @@ gitlab-ctl reconfigure
 ln -s /usr/sbin/sysctl /bin/sysctl 
 ```
 
+Учитываем, что для работы GitLab Puma потребуется порт 8080, поэтому изменим данный порт на 19000 в конфиге следующим образом:
+```
+### Advanced settings
+puma['listen'] = '127.0.0.1'
+puma['port'] = 19000
+puma['socket'] = '/var/opt/gitlab/gitlab-rails/sockets/gitlab.socket'
+puma['pidfile'] = '/opt/gitlab/var/puma/puma.pid'
+puma['state_path'] = '/opt/gitlab/var/puma/puma.state'
+```
+
 GitLab использует собственный инстанс PostgreSQL, но мы подключим его к общему. Для этого создадим базу данных и пользователя:
 ```
 su - postgres
@@ -1137,7 +1142,11 @@ CREATE USER gitlabusr with password 'bFET9BD7!Wwc';
 GRANT ALL PRIVILEGES ON DATABASE gitlabhq_production TO gitlabusr;
 # дадим права суперпользователя для автоматической установки требуемых расширений
 ALTER USER gitlabusr WITH SUPERUSER;
+# выходим
+\q
+exit
 ```
+gitlab-ctl pg-password-md5 gitlab
 
 Затем нужно добавить в /etc/gitlab/gitlab.rb следующее:
 ```
@@ -1145,7 +1154,8 @@ ALTER USER gitlabusr WITH SUPERUSER;
 sudo nano /etc/gitlab/gitlab.rb
 
 # добавим настройки базы данных
-postgresql['listen_address'] = '0.0.0.0'
+postgresql['enable'] = true
+postgresql['listen_address'] = '127.0.0.1'
 postgresql['port'] = 5432
 postgresql['md5_auth_cidr_addresses'] = %w()
 postgresql['trust_auth_cidr_addresses'] = %w(127.0.0.1/24)
@@ -1209,6 +1219,7 @@ gitlab-ctl restart postgresql
 
 # посмотреть лог
 sudo nano /var/log/gitlab/gitlab-rails/production.log
+gitlab-ctl tail
 ```
 
 При первой загрузке страницы GitLab будет предложено ввести новый пароль для пользователя root, при помощи которого можно получить доступ к Admin Area. Если есть проблемы с доступом через localhost, то стоит его добавить в Admin Area -> Settings -> Network -> Outbound requests -> установить галочку Allow requests to the local network from web hooks and services и в поле ниже ввести хост сервера (127.0.0.1 и т.п.), можно также указывать конкретный порт.
