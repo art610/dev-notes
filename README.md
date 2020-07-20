@@ -713,7 +713,7 @@ service nginx restart
 
 
 
-## Установка Jira & Confluence
+# Установка Jira & Confluence
 
 Создание базы данных в postgres:
 ```
@@ -745,7 +745,7 @@ ufw allow 17318/tcp	# confluence control port
 
 Вначале установим Jira, чтобы можно было цетрализованно работать с пользователями.
 
-### Установка Jira 
+## Установка Jira 
 
 ```
 # обновим пакеты
@@ -920,7 +920,39 @@ nano /home/atlassian/jira/bin/user.sh
 https://confluence.atlassian.com/jirakb/start-jira-applications-automatically-in-linux-828796713.html
 https://community.atlassian.com/t5/Jira-Software-questions/Jira-autostart-problem-on-Debian-9/qaq-p/624909
 
-### Установка Confluence
+## Устранение проблем с автозапуском Jira
+
+По умолчанию сервис Jira будет прописан в /etc/init.d/jira, но мы создадим сервис в system.d, а данный сервис на всякий случай перенесем в /opt (в качестве backup):
+```
+# перенесем сервис по умолчанию
+mv /etc/init.d/jira /opt
+# создадим свой сервис
+nano /lib/systemd/system/jira.service
+# добавим следующее
+[Unit]
+Description=Atlassian Jira
+After=network.target
+
+[Service]
+Type=forking
+User=jira
+PIDFile=/home/atlassian/jira/work/catalina.pid
+ExecStart=/home/atlassian/jira/bin/start-jira.sh
+ExecStop=/home/atlassian/jira/bin/stop-jira.sh
+
+[Install]
+WantedBy=multi-user.target
+
+# сохраним и активируем
+systemctl enable jira.service
+systemctl start jira.service
+# посмотрим статус сервиса
+systemctl status jira.service
+# перезагрузим сервер и проверим статус снова
+```
+
+
+## Установка Confluence
 
 ```
 # скачиваем установочный пакет
