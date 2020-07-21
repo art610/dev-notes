@@ -25,6 +25,35 @@ sudo apt update
 sudo apt -y dist-upgrade
 ```
 
+## Установим временную зону (дату и время в своём регионе)
+First at all, we should changing our timezone for setting up system clock for right time:
+ 
+Checking the Current Timezone:
+```
+timedatectl
+```
+The system timezone is configured by symlinking /etc/localtime to a binary timezone identifier in the /usr/share/zoneinfo directory. Other option to check the timezone is to show the path the symlink points to using the ls command :
+```
+ls -l /etc/localtime
+```
+Changing Timezone
+To list all available time zones, you can either list the files in the /usr/share/zoneinfo directory or use the timedatectl command.
+```
+timedatectl list-timezones
+```
+Once you identify which time zone is accurate to your location, run the following command as sudo user:
+```
+sudo timedatectl set-timezone your_time_zone
+```
+For example:
+```
+sudo timedatectl set-timezone Europe/Moscow
+```
+Verify the change by issuing the timedatectl command:
+```
+timedatectl
+```
+
 ### Установим базовые компоненты
 
 ```bash
