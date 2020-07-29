@@ -54,6 +54,18 @@ Verify the change by issuing the timedatectl command:
 timedatectl
 ```
 
+## Работа с Cron
+
+Шаблон команд в crontab:
+```
+[Minute] [hour] [Day_of_the_Month] [Month_of_the_Year] [Day_of_the_Week] [command]
+Minute 0 – 59
+Hour 0 – 23
+Day of month 1 – 31
+Month of year 1 – 12
+Day of week 0 – 7
+```
+
 ### Установим базовые компоненты
 
 ```bash
