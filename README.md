@@ -2477,6 +2477,11 @@ rsync -aAXvh --delete /home/mysql_backups /mnt/backups/mysql_backups
 umount /dev/sdb1
 ```
 
+# Gitlab Backups
+
+
+
+
 # Полезные команды
 ```
 # вывод истории команд
@@ -2534,7 +2539,19 @@ cd <source_dir>
 # выполняем следующее
 rsync -a --info=progress2 <target_dir> .
 # либо просто сравним объем исходной и целевой директории
- 
+
+# узнаем, свободен ли какой-то конкретный порт
+sudo lsof -i -P -n | grep LISTEN
+# отобразим список процессов, которые запущены прямо сейчас 
+ps -ef
+# поиск процесса можно осуществить с помощью grep
+ps -ef | grep -i <name_part>
+# отобразим список процессов пользователей
+ps -f -u user1,user2
+#  отобразим процессы потребляющие большое количество ресурсов ЦПУ
+ps aux —sort=-pcpu,+pmem
+# отобразим время прошедшее с запуска процесса
+ps -e -o pid,comm,etime
 ```
 
 ## DynDNS
