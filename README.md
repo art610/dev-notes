@@ -574,7 +574,7 @@ systemctl set-default graphical.target
 # sudo aptitude -y remove xserver-xorg-core
 ```
 
-### Установка PostgreSQL 12.3
+### Установка PostgreSQL 12.x
 
 ```bash
 # Create the file repository configuration:
@@ -587,7 +587,7 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-
 sudo apt-get update
 
 # Install the latest version of PostgreSQL
-sudo apt-get install postgresql-12
+sudo apt-get install -y postgresql-12
 
 # Login like postgres
 su - postgres
