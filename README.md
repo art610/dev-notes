@@ -1461,10 +1461,10 @@ puma['state_path'] = '/opt/gitlab/var/puma/puma.state'
 ```
 
 
-# Install Seafile pro 7.1.5
+# Install Seafile pro 7.1.6
 
 ```bash
-# Get Seafile Pro 7.1.5 package and put in `/home` directory
+# Get Seafile Pro 7.1.6 package and put in `/home` directory
 
 # -------------------------------------------
 # Additional requirements
@@ -1497,6 +1497,8 @@ service memcached start
 rm /etc/nginx/sites-enabled/*
 nano /etc/nginx/sites-available/seafile_nginx.conf
 ln -sf /etc/nginx/sites-available/seafile_nginx.conf /etc/nginx/sites-enabled/seafile_nginx.conf
+openssl dhparam -out /etc/nginx/dhparam.pem 4096
+
 service nginx restart
 
 # -------------------------------------------
@@ -1506,10 +1508,10 @@ service nginx restart
 apt-get install -y mariadb-server
 service mysql start
 
+# установить пароль root можно так
 mysqladmin -u root password <root-password> 
-
-# теперь настроим безопасное подключение к БД
-sudo mysql_secure_installation 	# только на смену пароля и удаленное подключение отвечаем No
+# либо в настройках безопасного подключения к БД
+sudo mysql_secure_installation 	# на удаленное подключение по root отвечаем No
 
 # seafile во время установки запросит пароль от root и установит требуемые БД
 
@@ -1526,9 +1528,9 @@ mysql -u <имя_пользователя> -p
 mkdir -p /home/seafile
 mkdir -p /home/seafile/installed
 cd /home/seafile
-mv /home/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
-tar xzf seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
-mv /home/seafile/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz /home/seafile/installed/seafile-pro-server_7.1.5_x86-64_Ubuntu.tar.gz
+mv /home/seafile-pro-server_7.1.6_x86-64_Ubuntu.tar.gz /home/seafile/seafile-pro-server_7.1.6_x86-64_Ubuntu.tar.gz
+tar xzf seafile-pro-server_7.1.6_x86-64_Ubuntu.tar.gz
+mv /home/seafile/seafile-pro-server_7.1.6_x86-64_Ubuntu.tar.gz /home/seafile/installed/seafile-pro-server_7.1.6_x86-64_Ubuntu.tar.gz
 
 # C отключенным шелом и одноименной группой
 useradd --system --comment "seafile" seafile --home-dir  /home/seafile -m -U -s /bin/false
@@ -1541,7 +1543,7 @@ usermod -a -G seafile www-data 	# Добавить пользователя www-
 # gpasswd -d www-data seafile - Удалить пользователя www-data из группы seafile
 # id www-data - Проверить в какие группы входит пользователь www-data
 
-cd /home/seafile/seafile-pro-server-7.1.5
+cd /home/seafile/seafile-pro-server-7.1.6
 
 # -------------------------------------------
 # Create ccnet, seafile, seahub conf using setup script
@@ -1560,7 +1562,7 @@ cd /home/seafile/seafile-pro-server-7.1.5
 # Configuring seahub_settings.py
 # -------------------------------------------
 
-python3 /home/seafile/seafile-pro-server-7.1.5/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
+python3 /home/seafile/seafile-pro-server-7.1.6/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
 
 # -------------------------------------------
 # Fix permissions
@@ -1572,13 +1574,13 @@ chown seafile:seafile -R /home/seafile
 # Start seafile server
 # -------------------------------------------
 
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh start
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh start 17101
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.6/seafile.sh start
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.6/seahub.sh start 17101
 
 # wait and stop
 
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh stop
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.6/seafile.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.6/seahub.sh stop
 
 # -------------------------------------------
 # Fix other permissions
@@ -1598,66 +1600,6 @@ enabled = true
 port = 17200	# default 8080
 fastcgi = false
 share_name = /seafdav
-```
-
-# Seafile NGINX config
-
-Add to `/etc/nginx/sites-available/seafile_nginx.conf`
-
-```NGINX
-log_format seafileformat '$http_x_forwarded_for $remote_addr [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $upstream_response_time';
-
-server {
-    listen 80;
-    server_name 17.10.1.1;	# add server ip or domain here
-
-    proxy_set_header X-Forwarded-For $remote_addr;
-
-    location / {
-         proxy_pass         http://17.10.1.1:17101;
-         proxy_set_header   Host $host:$proxy_port;
-         proxy_set_header   X-Real-IP $remote_addr;
-         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-         proxy_set_header   X-Forwarded-Host $server_name;
-         proxy_set_header   X-Forwarded-Proto $scheme;
-         proxy_read_timeout  1200s;
-
-         # used for view/edit office file via Office Online Server
-         client_max_body_size 0;
-
-         access_log      /var/log/nginx/seahub.access.log seafileformat;
-         error_log       /var/log/nginx/seahub.error.log;
-    }
-    
-    location /seafhttp {
-         rewrite ^/seafhttp(.*)$ $1 break;
-         proxy_pass http://17.10.1.1:17100;
-         client_max_body_size 0;
-         proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-         proxy_connect_timeout  36000s;
-         proxy_read_timeout  36000s;
-
-        access_log      /var/log/nginx/seafhttp.access.log seafileformat;
-        error_log       /var/log/nginx/seafhttp.error.log;
-    }
-    location /media {
-        root /home/seafile/seafile-server-latest/seahub;
-    }
-    location /seafdav {
-        proxy_pass         http://127.0.0.1:17200/seafdav;
-        proxy_set_header   Host $host:$proxy_port;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Host $server_name;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_read_timeout  1200s;
-
-        client_max_body_size 0;
-
-        access_log      /var/log/nginx/seafdav.access.log seafileformat;
-        error_log       /var/log/nginx/seafdav.error.log;
-    }
-}
 ```
 
 # Seafile configs [/opt/seafile/conf]
