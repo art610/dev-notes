@@ -1487,7 +1487,7 @@ service mysql start
 mysqladmin -u root password <root-password> 
 
 # теперь настроим безопасное подключение к БД
-sudo mysql_secure_installation 	# только на смену пароля отвечаем No
+sudo mysql_secure_installation 	# только на смену пароля и удаленное подключение отвечаем No
 
 # seafile во время установки запросит пароль от root и установит требуемые БД
 
@@ -2433,7 +2433,9 @@ nano /usr/local/bin/cron_local_backup.sh
 # -----------------------------------------------------------------------
 #!/bin/bash
 
+mount /dev/sdb1 /mnt/backups
 rsync -aAXvh --delete / --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} /mnt/backups
+umount /dev/sdb1
 
 # -----------------------------------------------------------------------
 
@@ -2446,8 +2448,95 @@ crontab -e
 
 Теперь мы настроили резервное копирование Linux на подключенный внешний диск, причем удаление файлов в системе будет приводить к их удалению в резервной копии. Стоит заметить, что в данном случае, восстановление по ошибке удаленного файла, нужно произвести до начала обновления резервной копии, то есть до вечера текущего дня.
 
+В Windows 10 достаточно настроить точки восстановления в Settings -> Recovery и Task Scheduler -> Microsoft -> Windows -> SystemRestore -> Edit -> Triggers, а затем, дополнительно создать образ всей настроенной системы, и делать инкрементальные копии посредством Acronis True Image. При необходимости, можно также создать диск восстановления через Acronis TI, либо можно использовать Windows 10 File History.
 
+## MariaDB (MySQL) Backups
 
+Для создания бэкапа потребуется создать директорию, а затем добавить в cron соответствующую команду:
+```
+mkdir /home/mysql_backups
+
+# создадим файл с учетными данными - permissions 600
+nano ~/.my.cnf
+# добавим учетные данные следующим образом
+[mysqldump]
+user=mysqluser
+password=secret
+# теперь можно создать задачу в cron
+crontab -e 
+# добавляем следующее
+20 22 * * * mysqldump --all-databases --single-transaction --quick --lock-tables=false > /home/mysql_backups/dump-$(date +%F).sql -u root
+# добавим также задачу синхронизации бэкапа с внешним диском
+# примонтируем внешний диск
+mount /dev/sdb1 /mnt/backups
+# создадим на внешнем диске требуемую директорию
+mkdir /mnt/backups/mysql_backups
+# добавим задачу синхронизации
+rsync -aAXvh --delete /home/mysql_backups /mnt/backups/mysql_backups
+# отмонтируем диск
+umount /dev/sdb1
+```
+
+# Полезные команды
+```
+# вывод истории команд
+history
+# найти ранее введенную команду
+history | grep -i <command_part>
+
+# выполнение команды из истории
+!<command number>
+# выполнить предыдущую команду от root
+!!
+
+# список задач в cron для конкретного пользователя
+crontab -u <username> -l
+# редактирование задач в cron для пользователя
+crontab -u <username> -e
+# тип команд для cron
+<time_period * * * * *> <command>
+[Minute] [hour] [Day_of_the_Month] [Month_of_the_Year] [Day_of_the_Week] [command]
+Minute 0 – 59
+Hour 0 – 23
+Day of month 1 – 31
+Month of year 1 – 12
+Day of week 0 – 7
+# текущая временная зона
+timedatectl
+# создание скрипта для запуска по cron
+nano /usr/local/bin/cron_<script_name>.sh
+# делаем скрипт исполняемым
+chmod +x /usr/local/bin/cron_<script_name>.sh
+# добавляем в cron
+mm hh * * * /usr/local/bin/cron_<script_name>.sh
+
+# примонтировать и отмонтировать диск
+mount <drive_partition> <directory>
+umount <drive_partition>
+# пример
+mount /dev/sdb1 /mnt
+umount /dev/sdb1
+
+# просмотреть диски
+fdisk -l
+
+# посмотреть свободное место в удобочитабельном виде
+df -h <drive or directory>
+# например
+df -h /dev/sdb1
+
+# резервное копирование файлов из одной директории в другую (внешний диск представляет собой примонтированное к опр. директории пространство)
+rsync -aAXvh --delete <source_dir/file> <target_dir>
+# опция --delete позволит удалять файлы, которые были удалены из source_dir 
+# прогресс операции в процентах (сравнение)
+# переходим в source_dir
+cd <source_dir>
+# выполняем следующее
+rsync -a --info=progress2 <target_dir> .
+# либо просто сравним объем исходной и целевой директории
+ 
+```
+rsync -aAXvh --delete /home/atlassian /mnt/backups/atlassian
 
 ## DynDNS
 
