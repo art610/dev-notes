@@ -494,10 +494,10 @@ DNS.2 = *.%%DOMAIN%%
 Делаем скрипт исполняемым и запускаем:
 ```
 chmod a+x create_certificate_for_domain.sh
-./create_certificate_for_domain.sh mars.sol
+./create_certificate_for_domain.sh cloud.ln
 ```
 
-Получаем два файла: mars.sol.crt и device.key
+Получаем два файла: cloud.ln и device.key в директории /home/certs/cloud.ln
 
 Ковертируем rootCA.pem в rootCA.crt
 ```
@@ -532,8 +532,18 @@ certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "My Homemade CA" -i /path/to/CA/
 
 Более подробно здесь: https://habr.com/ru/post/352722/
 
-Добавление сертификата в доверенные в Linux: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
 
+Добавить сертификат в доверенные на Debian можно так:
+```
+apt-get install ca-certificates
+cp cacert.pem /usr/share/ca-certificates
+dpkg-reconfigure ca-certificates
+```
+
+Подробнее про добавление сертификата в доверенные в Linux: https://unix.stackexchange.com/questions/90450/adding-a-self-signed-certificate-to-the-trusted-list
+
+Добавить утилиту nslookup можно так:
+`apt-get install -y dnsutils`
 
 ### Wake-on-LAN
 
@@ -549,7 +559,7 @@ https://userello.ru/internet/chto-takoe-wake-lan-i-kak-ego-vklyuchit
 ```
 # переходим в консоль по Ctrl+Alt+F1
 # установим aptitude если не установлено
-sudo apt-get install aptitude
+sudo apt-get install -y aptitude
 # определим имя графического менеджера
 aptitude search '~i~Px-display-manager'
 # перейдем в многопользовательский режим 
