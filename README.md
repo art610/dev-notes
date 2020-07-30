@@ -2536,7 +2536,6 @@ rsync -a --info=progress2 <target_dir> .
 # либо просто сравним объем исходной и целевой директории
  
 ```
-rsync -aAXvh --delete /home/atlassian /mnt/backups/atlassian
 
 ## DynDNS
 
