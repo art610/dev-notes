@@ -1935,159 +1935,6 @@ chown -R seafile:seafile /mnt/data/seafile-data/
 
 Info here: https://download.seafile.com/published/seafile-manual/security/fail2ban.md
 
-## NGINX conf
-
-`sudo nano /etc/nginx/nginx.conf`
-
-```nginx
-user www-data;
-worker_processes auto;
-pid /run/nginx.pid;
-include /etc/nginx/modules-enabled/*.conf;
-
-events {
-	# Максимальное количество соединений одного воркера.
-	worker_connections 1024;
-	# Метод выбора соединений.
-	use epoll;
-	# Принимать максимально возможное количество соединений.
-	multi_accept on;
-}
-
-http {
-	##
-	# Basic Settings
-	##
-
-	# Метод отправки данных sendfile эффективнее чем read+write.
-	sendfile on;
-
-	# Ограничивает объём данных, который может передан за один вызов sendfile(). Нужно для исключения ситуации когда одно соединение может целиком захватить воркер.
-	sendfile_max_chunk 128k;
-
-	# Отправлять заголовки и начало файла в одном пакете.
-	tcp_nopush on;
-	tcp_nodelay on;
-
-	# Сбрасывать соединение если клиент перестал читать ответ.
-	reset_timedout_connection on;
-
-	# Максимальный размер хэш-таблиц типов.
-	types_hash_max_size 2048;
-
-	# Отключить вывод версии nginx в ответе.
-	server_tokens off;
-
-	# Задание буфера для заголовка и тела запроса.
-	client_header_buffer_size 2k;
-	client_body_buffer_size 256K;
-
-	# Ограничение на размер тела запроса.
-	client_max_body_size 12m;
-
-	# Количество и размер буферов для чтения большого заголовка запроса клиента.
-	large_client_header_buffers 2 1k;
-
-	# Таймаут при чтении тела запроса клиента.
-	client_body_timeout 5;
-
-	# Таймаут при чтении заголовка запроса клиента.
-	client_header_timeout 3;
-
-	# Таймаут, по истечению которого keep-alive соединение с клиентом не будет закрыто со стороны сервера.
-	keepalive_timeout 60 60;
-
-	# Таймаут при передаче ответа клиенту.
-	send_timeout 3;
-
-	# Ограничиваем число соединений с сервером с одного клиентского IP-адреса(limit_conn perip, находится в зоне server).
-	# Позволяет ограничить число соединений по заданному ключу, в частности, число соединений с одного IP-адреса.
-	#limit_conn_zone $binary_remote_addr zone=perip:5m;
-	# Позволяет ограничить скорость обработки запросов по заданному ключу или, как частный случай, скорость обработки запросов, поступающих с одного IP-адреса.
-	#limit_req_zone $binary_remote_addr zone=dynamic:5m rate=2r/s;
-
-	# server_names_hash_bucket_size 64;
-	# server_name_in_redirect off;
-
-	include /etc/nginx/mime.types;
-	default_type application/octet-stream;
-
-	##
-	# SSL Settings
-	##
-
-	# Поддерживаемые протоколы.
-	ssl_protocols TLSv1.2; # Dropping SSLv3, ref: POODLE
-
-	# Указывает, чтобы при использовании протоколов SSLv3 и TLS серверные шифры были более приоритетны, чем клиентские.
-	ssl_prefer_server_ciphers on;
-
-	# Наборы шифров.
-	ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384;
-	ssl_ecdh_curve secp384r1;
-
-	# HSTS
-	add_header Strict-Transport-Security "max-age=31536000";
-
-	# Тип и объём кэша для хранения параметров сессий. Параметр shared задает общий для всех рабочих процессов nginx кэш.
-	ssl_session_cache shared:SSL:10m;
-
-	# Таймаут сессии в кэше.
-	ssl_session_timeout 5m;
-
-	#ssl_stapling on;
-	#ssl_stapling_verify on;
-	#resolver 83.217.24.42 8.8.8.8 valid=300s;
-	#resolver_timeout 5s;
-
-	##
-	# Logging Settings
-	##
-
-	access_log off;
-	#access_log /var/log/nginx/access.log;
-	error_log /var/log/nginx/error.log;
-
-	##
-	# Gzip Settings
-	##
-
-	gzip on;
-	gzip_comp_level 5;
-	gzip_min_length 256;
-	gzip_proxied any;
-	gzip_vary on;
-	gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
-
-	##
-	# Virtual Host Configs
-	##
-
-	include /etc/nginx/conf.d/*.conf;
-	include /etc/nginx/sites-enabled/*;
-}
-
-#mail {
-#	# See sample authentication script at:
-#	# http://wiki.nginx.org/ImapAuthenticateWithApachePhpScript
-# 
-#	# auth_http localhost/auth.php;
-#	# pop3_capabilities "TOP" "USER";
-#	# imap_capabilities "IMAP4rev1" "UIDPLUS";
-# 
-#	server {
-#		listen     localhost:110;
-#		protocol   pop3;
-#		proxy      on;
-#	}
-# 
-#	server {
-#		listen     localhost:143;
-#		protocol   imap;
-#		proxy      on;
-#	}
-#}
-```
 
 ## Скрипт для очистки сервера от мусора
 
@@ -2172,77 +2019,232 @@ Seafile Settings: https://seafile.gitbook.io/seafile-server-manual/server-config
 log_format seafileformat '$http_x_forwarded_for $remote_addr [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $upstream_response_time';
 
 server {
-        listen       80;
-        server_name  mars.sol;
-        rewrite ^ https://$http_host$request_uri? permanent;
-        server_tokens off;
+	listen       80;
+	listen [::]:80;
+	server_name  cloud.ln;
+    return 301 https://$host$request_uri;
 }
 
 server {
-        listen 443;
-        ssl on;
-
-        server_name mars.sol;
-
-        ssl_certificate /home/certs/mars.sol.crt;
-        ssl_certificate_key /home/certs/device.key;
-
-        ssl_session_timeout 5m;
-        ssl_session_cache shared:SSL:5m;
-
-        # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
-        ssl_dhparam /etc/nginx/dhparam.pem;
-
-        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-        ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-CAMELLIA256-SHA:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-SEED-SHA:DHE-RSA-CAMELLIA128-SHA:HIGH:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS';
-        ssl_prefer_server_ciphers on;
+	listen [::]:443 ssl http2;
+	listen 443 ssl http2;
+	ssl on;
+	server_name cloud.ln;
 	
-        proxy_set_header X-Forwarded-For $remote_addr;
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
-        server_tokens off;
-	
-        location / {
-                proxy_pass         http://17.10.1.1:17101;
-                proxy_set_header   Host $host:$proxy_port;
-                proxy_set_header   X-Real-IP $remote_addr;
-                proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header   X-Forwarded-Host $server_name;
-                proxy_set_header   X-Forwarded-Proto https;
-                proxy_read_timeout  1200s;
-                client_max_body_size 0;
+	ssl_certificate /home/certs/cloud.ln/cloud.ln.crt;
+	ssl_certificate_key /home/certs/cloud.ln/device.key;
 
-                access_log      /var/log/nginx/seahub.access.log seafileformat;
-                error_log       /var/log/nginx/seahub.error.log;
-        }
-        location /seafhttp {
-                rewrite ^/seafhttp(.*)$ $1 break;
-                proxy_pass http://17.10.1.1:17100;
-                client_max_body_size 0;
-                proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_connect_timeout  36000s;
-                proxy_read_timeout  36000s;
-                proxy_send_timeout  36000s;
-                send_timeout  36000s;
-                proxy_request_buffering off;
-        }
+	proxy_set_header X-Forwarded-For $remote_addr;
+	client_max_body_size 0;
+    
+	location / {
+		proxy_pass         http://17.10.1.1:17101;
+		proxy_set_header   Host $host:$proxy_port;
+		proxy_set_header   X-Real-IP $remote_addr;
+		proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header   X-Forwarded-Host $server_name;
+		proxy_set_header   X-Forwarded-Proto https;
+         
+		proxy_read_timeout  1200s;
+	}
+    
+	location /seafhttp {
+		rewrite ^/seafhttp(.*)$ $1 break;
+		proxy_pass http://17.10.1.1:17100;
+		proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_connect_timeout  36000s;
+		proxy_read_timeout  36000s;
+		proxy_send_timeout  36000s;
+		send_timeout  36000s;
 
-        location /media {
-                root /home/seafile/seafile-server-latest/seahub;
-        }
+		proxy_request_buffering off;
+	}
 
-        location /seafdav {
-                proxy_pass         http://17.10.1.1:8080/seafdav;
-                proxy_set_header   Host $host:$proxy_port;
-                proxy_set_header   X-Real-IP $remote_addr;
-                proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header   X-Forwarded-Host $server_name;
-                proxy_set_header   X-Forwarded-Proto https;
-                proxy_read_timeout  1200s;
+	location /media {
+		root /home/seafile/seafile-server-latest/seahub;
+	}
 
-                client_max_body_size 0;
-                proxy_request_buffering off;
-        }
+	location /seafdav {
+		proxy_pass         http://17.10.1.1:8080/seafdav;
+		proxy_set_header   Host $host:$proxy_port;
+		proxy_set_header   X-Real-IP $remote_addr;
+		proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header   X-Forwarded-Host $server_name;
+		proxy_set_header   X-Forwarded-Proto https;
+		proxy_read_timeout  1200s;
+		proxy_request_buffering off;
+	}
 }
+```
+
+Добавим также следующее в nginx.conf:
+
+```nginx
+user www-data;
+worker_processes auto;
+worker_rlimit_nofile 100000;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+	worker_connections 4000;
+	use epoll;
+	multi_accept on;
+}
+
+http {
+	# cache informations about FDs, frequently accessed files
+	# can boost performance, but you need to test those values
+	open_file_cache max=200000 inactive=20s;
+	open_file_cache_valid 30s;
+	open_file_cache_min_uses 2;
+	open_file_cache_errors on;
+	# copies data between one FD and other from within the kernel
+	# faster than read() + write()
+	sendfile on;
+	sendfile_max_chunk 128k;
+	# send headers in one piece, it is better than sending them one by one
+	tcp_nopush on;
+	# don't buffer data sent, good for small data bursts in real time
+	tcp_nodelay on;
+	types_hash_max_size 2048;
+	# Just For Security Reason
+	server_tokens off;
+
+	# buffer size for reading client request header -- for testing environment
+	client_header_buffer_size 2k;
+	# if the request body size is more than the buffer size, then the entire (or partial)
+	# request body is written into a temporary file
+	client_body_buffer_size 256K;
+	client_max_body_size 12m;
+	# maximum number and size of buffers for large headers to read from client request
+	large_client_header_buffers 4 256k;
+	
+	# server_names_hash_bucket_size 64;
+	# server_name_in_redirect off;
+
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+
+	##
+	# SSL Settings
+	##
+
+	# ssl_protocols TLSv1 TLSv1.1 TLSv1.2; 
+	# Dropping SSLv3, ref: POODLE
+	ssl_protocols TLSv1.2;
+	ssl_prefer_server_ciphers on;
+	# Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
+	ssl_dhparam /etc/nginx/dhparam.pem;	
+	ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384;
+	ssl_ecdh_curve secp384r1;
+	ssl_session_cache shared:SSL:10m;
+	ssl_session_timeout 5m;
+	add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";	
+	##
+	# Logging Settings
+	##
+	# to boost I/O on HDD we can disable access logs
+	access_log off;
+	# only log critical errors
+	error_log /var/log/nginx/error.log crit;
+
+	# default logging config:
+	# access_log /var/log/nginx/access.log;
+	# error_log /var/log/nginx/error.log;
+
+	##
+	# Gzip Settings
+	##
+	# reduce the data that needs to be sent over network -- for testing environment
+	gzip on;
+	gzip_min_length 10240;
+	gzip_comp_level 1;
+	gzip_proxied any;
+	gzip_vary on;
+	gzip_disable msie6;
+	gzip_proxied expired no-cache no-store private auth;
+	gzip_types
+        # text/html is always compressed by HttpGzipModule
+		text/css
+		text/javascript
+		text/xml
+		text/plain
+		text/x-component
+		text/cache-manifest
+		text/vcard
+		text/vnd.rim.location.xloc
+		text/vtt
+		text/x-cross-domain-policy
+		application/javascript
+		application/x-javascript
+		application/json
+		application/xml
+		application/rss+xml
+		application/atom+xml
+		application/ld+json
+		application/manifest+json
+		application/vnd.geo+json
+		application/vnd.ms-fontobject
+		application/x-font-ttf
+		application/x-web-app-manifest+json
+		application/xhtml+xml
+		font/truetype
+		font/opentype
+		image/bmp
+		image/x-icon
+		image/svg+xml;
+	# allow the server to close connection on non responding client, this will free up memory
+	reset_timedout_connection on;
+	# request timed out -- default 60
+	# read timeout for the request body from client -- for testing environment
+	client_body_timeout 5;
+	# how long to wait for the client to send a request header -- for testing environment
+	client_header_timeout 3;
+	# if client stop responding, free up memory -- default 60
+	send_timeout 3;
+	# server will close connection after this time -- default 75
+	keepalive_timeout 30;
+	# number of requests client can make over keep-alive -- for testing environment
+	keepalive_requests 100000;
+
+	# gzip_vary on;
+	# gzip_proxied any;
+	# gzip_comp_level 6;
+	# gzip_buffers 16 8k;
+	# gzip_http_version 1.1;
+	# gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+	##
+	# Virtual Host Configs
+	##
+
+	include /etc/nginx/conf.d/*.conf;
+	include /etc/nginx/sites-enabled/*;
+}
+
+
+#mail {
+#	# See sample authentication script at:
+#	# http://wiki.nginx.org/ImapAuthenticateWithApachePhpScript
+# 
+#	# auth_http localhost/auth.php;
+#	# pop3_capabilities "TOP" "USER";
+#	# imap_capabilities "IMAP4rev1" "UIDPLUS";
+# 
+#	server {
+#		listen     localhost:110;
+#		protocol   pop3;
+#		proxy      on;
+#	}
+# 
+#	server {
+#		listen     localhost:143;
+#		protocol   imap;
+#		proxy      on;
+#	}
+#}
+
 ```
 
 Далее перезагружаем NGINX:
