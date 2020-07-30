@@ -16,8 +16,8 @@ deb-src http://security.debian.org/debian-security buster/updates main contrib
 deb http://deb.debian.org/debian/ buster-updates main contrib non-free
 deb-src http://deb.debian.org/debian/ buster-updates main contrib non-free
 
-deb http://deb.debian.org/debian/ buster-backports main contrib non-free
-deb-src http://deb.debian.org/debian/ buster-backports main contrib non-free
+# deb http://deb.debian.org/debian/ buster-backports main contrib non-free
+# deb-src http://deb.debian.org/debian/ buster-backports main contrib non-free
 
 # сохраняем изменения: Ctrl+X затем Y и Enter
 # обновим зависимости
@@ -127,7 +127,7 @@ ufw allow ssh && ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
 sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
 # установим последнюю версию
 sudo apt-get install gcc g++ make
-sudo apt-get update && sudo apt-get install yarn
+sudo apt-get update && sudo apt-get install -y yarn
 sudo apt-get install -y nodejs
 # обновляем зависимости и пакеты
 apt update
@@ -148,9 +148,10 @@ sudo apt install -y certbot python3-certbot-nginx
 # устанавливаем дополнительные пакеты pip
 sudo apt-get install -y python3-pip
 sudo apt-get install -y python-pip
-# upgrade pip version
-python -m pip install --user art610 --upgrade pip
-python3 -m pip install --user art610 --upgrade pip
+# upgrade pip version 
+pip install --user --upgrade pip
+pip3 install --upgrade --user pip
+
 python3 -m pip install virtualenv
 python3 -m pip install virtualenvwrapper
 sudo apt-get -y install python3-dev
@@ -245,12 +246,16 @@ nano /etc/hosts
 # add this
 # /etc/hosts на компьютере-шлюзе 
 127.0.0.1 localhost 
-192.168.0.1 mars mars.sol
+192.168.0.1 cloud cloud.ln
 # Если возникнут проблемы, проверьте конфигурацию брандмауэра! 
 
 # Конфигурация dnsmasq выполняется в файле /etc/dnsmasq.conf
+cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
 nano /etc/dnsmasq.conf
+
+# ------------------------
 # add this configs
+# ------------------------
 domain-needed
 bogus-priv
 interface=enp3s2
@@ -267,17 +272,18 @@ dhcp-authoritative
 local=/sol/
 domain=sol
 expand-hosts
+# ------------------------
 
 # edit /etc/dhcp/dhclient.conf
 nano /etc/dhcp/dhclient.conf
 # uncomment this string
 prepend domain-name-servers 127.0.0.1;
 
-# edit /etc/resolv.conf
-nano /etc/resolv.conf
+# if needed - edit /etc/resolv.conf
+# nano /etc/resolv.conf
 # add nameservers in strict order
-nameserver 127.0.0.1
-nameserver 192.168.8.1
+# nameserver 127.0.0.1
+# nameserver 192.168.8.1
 # nameserver 8.8.8.8
 # nameserver 8.8.4.4
 
