@@ -2,6 +2,21 @@
 
 
 ## Первоначальная настройка
+
+### Create user and add his to sudo group
+
+```
+# повышаем права до root и переходим в домашнюю директорию root-пользователя
+sudo su
+cd
+# устанавливаем sudo (если отсутствует)
+apt-get install sudo
+visudo	# файл с настройками
+# Создаем пользователя (указываем пароль и др. данные) и добавляем его в sudo
+sudo adduser <username>
+sudo usermod -aG sudo <username>
+```
+
 ### Настройка репозиториев на Debian 10 buster
 ```bash
 # редактируем файл sources.list (добавляем contrib non-free для каждого репозитория)
@@ -27,7 +42,6 @@ sudo apt -y dist-upgrade
 ```
 
 ## Установим временную зону (дату и время в своём регионе)
-First at all, we should changing our timezone for setting up system clock for right time:
  
 Checking the Current Timezone:
 ```
@@ -55,31 +69,9 @@ Verify the change by issuing the timedatectl command:
 timedatectl
 ```
 
-## Работа с Cron
-
-Шаблон команд в crontab:
-```
-[Minute] [hour] [Day_of_the_Month] [Month_of_the_Year] [Day_of_the_Week] [command]
-Minute 0 – 59
-Hour 0 – 23
-Day of month 1 – 31
-Month of year 1 – 12
-Day of week 0 – 7
-```
-
 ### Установим базовые компоненты
 
 ```bash
-# повышаем права до root и переходим в домашнюю директорию root-пользователя
-sudo su
-cd
-# устанавливаем sudo (если отсутствует)
-apt-get install sudo
-visudo	# файл с настройками
-# Создаем пользователя (указываем пароль и др. данные) и добавляем его в sudo
-sudo adduser <username>
-sudo usermod -aG sudo <username>
-
 # устанавливаем необходимые пакеты одной командной (\ перенос строки для удобства)
 sudo apt-get -y install \
 	libtiff5-dev \
@@ -110,6 +102,7 @@ sudo apt-get -y install \
 	curl \
 	wget \
 	nginx \
+	certbot python3-certbot-nginx \
 	ufw \
 	git 
 
@@ -132,34 +125,21 @@ sudo apt-get update && sudo apt-get install -y yarn
 sudo apt-get install -y nodejs
 # обновляем зависимости и пакеты
 apt update
-# проверяем версии nodejs и npm
-nodejs -v && node -v && npm -v
 
 # включаем FireWall
-ufw enable
 # просмотрим установленные правила firewall 
-ufw status
-
-# переходим в директорию по умолчанию
-cd ~
-# Установим дополнительные пакеты certbot для SSL/TLS
-sudo apt install -y certbot python3-certbot-nginx
-
+ufw enable && ufw status
 
 # устанавливаем дополнительные пакеты pip
-sudo apt-get install -y python3-pip
-sudo apt-get install -y python-pip
-# upgrade pip version 
-pip install --user --upgrade pip
-pip3 install --upgrade --user pip
+sudo apt-get install -y python3-pip python-pip python3-dev python-dev
+
+# you can upgrade pip version: pip install --user --upgrade pip or pip3 install --upgrade --user pip
 
 python3 -m pip install virtualenv
 python3 -m pip install virtualenvwrapper
-sudo apt-get -y install python3-dev
 
+# очистим старые записи после обновления -> hash -d pip
 
-# очистим старые записи после обновления
-hash -d pip
 # проверим версии python и pip
 python -V && pip -V
 python3 -V && pip3 -V
@@ -182,10 +162,7 @@ fi
 sudo apt update
 
 # выводим основную информацию
-cat /etc/os-release    # информация о релизе ОС
-arch    # архитектура ОС
-nodejs -v && node -v && npm -v
-git --version && python3 -V && pip3 -V
+cat /etc/os-release && echo -n "arch: " && arch && git --version && python3 -V && pip3 -V && echo -n "nodejs: " && nodejs -v && echo -n "npm: " && npm -v
 ```
 
 ### Доступ из локальной сети
@@ -200,10 +177,8 @@ auto enp3s2
         iface enp3s2 inet static
         address 17.10.1.1
         netmask 255.255.255.0
-	# gateway 17.10.1.2  
-	# network 192.168.1.0
-	# broadcast 192.168.1.1
-	# dns-nameservers 8.8.8.8 8.8.4.4
+
+dns-nameservers 17.10.1.1
 
 # перезапускаем сеть
 systemctl restart networking
@@ -215,18 +190,23 @@ sudo ifup enp3s2
 
 ## Установка DHCP и DNS сервера DNSMasq 
 
-Разрешение трафика на локальном узле
 ```
-sudo iptables -A INPUT -i <eth0> -j ACCEPT	# указываем нужное имя интерфейса
-iptables -I INPUT -p tcp --dport 53 -j ACCEPT
-iptables -I INPUT -p udp --dport 53 -j ACCEPT
-iptables -I INPUT -p tcp --dport 5353 -j ACCEPT
-iptables -I INPUT -p udp --dport 5353 -j ACCEPT
+sudo apt -y install dnsmasq resolvconf
+
+# Разрешение трафика на локальном узле
+sudo iptables -A INPUT -i enp3s2 -j ACCEPT
 sudo /sbin/iptables-save	# сохраняем правила
 apt-get install iptables-persistent	# установим для автоподгрузки файлов после преезапуска системы
-sudo ufw allow bootps		
+sudo ufw allow bootps	
+
+# if needed:
+# iptables -I INPUT -p tcp --dport 53 -j ACCEPT
+# iptables -I INPUT -p udp --dport 53 -j ACCEPT
+# iptables -I INPUT -p tcp --dport 5353 -j ACCEPT
+# iptables -I INPUT -p udp --dport 5353 -j ACCEPT	
 ```
 
+Manual: https://www.server-world.info/en/note?os=Debian_10&p=dnsmasq&f=1
 More info: https://itproffi.ru/nastrojka-pravil-iptables-v-linux/
 
 Если получили ошибку "unable to resolve host", то меняем localhost в файле /etc/hosts:
@@ -244,18 +224,14 @@ More info: https://losst.ru/oshibka-sudo-unable-to-resolve-host
 Настраиваем DNSMasq:
 
 ```
-# install
-apt install dnsmasq
 # edit hosts-file
 nano /etc/hosts
 # add this
-# /etc/hosts на компьютере-шлюзе 
-127.0.0.1 localhost 
-192.168.0.1 cloud cloud.ln
+17.10.1.1 cloud cloud.ln
 # Если возникнут проблемы, проверьте конфигурацию брандмауэра! 
 
 # Конфигурация dnsmasq выполняется в файле /etc/dnsmasq.conf
-cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
+cp /etc/dnsmasq.conf /etc/dnsmasq.conf.sample
 nano /etc/dnsmasq.conf
 
 # ------------------------
@@ -263,27 +239,31 @@ nano /etc/dnsmasq.conf
 # ------------------------
 domain-needed
 bogus-priv
-interface=enp3s2
 strict-order
+
+interface=enp3s2
 
 # DHCP config
 dhcp-range=17.10.1.1,17.10.1.100,7D
 dhcp-option=3,17.10.1.1
 dhcp-option=1,255.255.255.0
-dhcp-authoritative
-# dhcp-boot=pxelinux.0,17.10.1.1
+dhcp-host=D0:37:45:0E:93:DD,17.10.1.2	# check MAC address of local PC
 
 # DNS config
-local=/sol/
-domain=sol
+local=/ln/
+domain=ln
 expand-hosts
 # ------------------------
 
-# edit /etc/dhcp/dhclient.conf
-nano /etc/dhcp/dhclient.conf
-# uncomment this string
-prepend domain-name-servers 127.0.0.1;
+systemctl restart dnsmasq
+systemctl restart ifup@enp3s2 resolvconf
+systemctl restart networking
 
+# IF NEEDED!!!
+# edit /etc/dhcp/dhclient.conf
+# nano /etc/dhcp/dhclient.conf
+# uncomment this string
+# prepend domain-name-servers 127.0.0.1;
 # if needed - edit /etc/resolv.conf
 # nano /etc/resolv.conf
 # add nameservers in strict order
@@ -291,20 +271,19 @@ prepend domain-name-servers 127.0.0.1;
 # nameserver 192.168.8.1
 # nameserver 8.8.8.8
 # nameserver 8.8.4.4
-
 # restart dnsmasq and networks
-sudo systemctl restart networking
-/etc/init.d/dnsmasq restart
+# sudo systemctl restart networking
+# /etc/init.d/dnsmasq restart
 ```
 
 More info: https://modx.cc/linux/programma-dnsmasq-(dhcp-i-server-imen)/
 
-Now, if we on client open terminal/cmd and write `ping mars.sol`, we get request from 17.10.1.1. If we use some web-servers like nginx, we can open in browser url: http://mars.sol [17.10.1.1].
+Now, if we on client open terminal/cmd and write `ping cloud.ln`, we get request from 17.10.1.1. If we use some web-servers like nginx, we can open in browser url: http://cloud.ln [17.10.1.1].
 
 ```
 # check in cmd
-ping mars.sol
-nslookup mars.sol
+ping cloud.ln
+nslookup cloud.ln
 ```
 
 We can edit our /etc/hosts on server and add domains for our ip's.
