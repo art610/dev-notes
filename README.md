@@ -190,6 +190,9 @@ sudo ifup enp3s2
 
 ## Установка DHCP и DNS сервера DNSMasq 
 
+Install and configure DHCP server: https://www.server-world.info/en/note?os=Debian_10&p=dhcp&f=1
+
+Use DNSmasq as DNS server:
 ```
 sudo apt -y install dnsmasq resolvconf
 
@@ -237,17 +240,17 @@ nano /etc/dnsmasq.conf
 # ------------------------
 # add this configs
 # ------------------------
-domain-needed
-bogus-priv
-strict-order
+# domain-needed
+# bogus-priv
+# strict-order
 
 interface=enp3s2
 
 # DHCP config
-dhcp-range=17.10.1.1,17.10.1.100,7D
-dhcp-option=3,17.10.1.1
-dhcp-option=1,255.255.255.0
-dhcp-host=D0:37:45:0E:93:DD,17.10.1.2	# check MAC address of local PC
+# dhcp-range=17.10.1.1,17.10.1.100,7D
+# dhcp-option=3,17.10.1.1
+# dhcp-option=1,255.255.255.0
+# dhcp-host=D0:37:45:0E:93:DD,17.10.1.2	# check MAC address of local PC
 
 # DNS config
 local=/ln/
