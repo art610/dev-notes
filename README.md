@@ -291,12 +291,6 @@ nano /etc/dnsmasq.conf
 
 interface=enp3s2
 
-# DHCP config
-# dhcp-range=17.10.1.1,17.10.1.100,7D
-# dhcp-option=3,17.10.1.1
-# dhcp-option=1,255.255.255.0
-# dhcp-host=D0:37:45:0E:93:DD,17.10.1.2	# check MAC address of local PC
-
 # DNS config
 local=/ln/
 domain=ln
@@ -307,21 +301,15 @@ systemctl restart dnsmasq
 systemctl restart ifup@enp3s2 resolvconf
 systemctl restart networking
 
-# IF NEEDED!!!
+
 # edit /etc/dhcp/dhclient.conf
-# nano /etc/dhcp/dhclient.conf
+nano /etc/dhcp/dhclient.conf
 # uncomment this string
-# prepend domain-name-servers 127.0.0.1;
-# if needed - edit /etc/resolv.conf
-# nano /etc/resolv.conf
-# add nameservers in strict order
-# nameserver 127.0.0.1
-# nameserver 192.168.8.1
-# nameserver 8.8.8.8
-# nameserver 8.8.4.4
+prepend domain-name-servers 127.0.0.1;
+
 # restart dnsmasq and networks
-# sudo systemctl restart networking
-# /etc/init.d/dnsmasq restart
+systemctl restart networking
+/etc/init.d/dnsmasq restart
 ```
 
 More info: https://modx.cc/linux/programma-dnsmasq-(dhcp-i-server-imen)/
