@@ -32,8 +32,8 @@ deb-src http://security.debian.org/debian-security buster/updates main contrib
 deb http://deb.debian.org/debian/ buster-updates main contrib non-free
 deb-src http://deb.debian.org/debian/ buster-updates main contrib non-free
 
-deb http://deb.debian.org/debian/ buster-backports main contrib non-free
-deb-src http://deb.debian.org/debian/ buster-backports main contrib non-free
+# deb http://deb.debian.org/debian/ buster-backports main contrib non-free
+# deb-src http://deb.debian.org/debian/ buster-backports main contrib non-free
 
 # сохраняем изменения: Ctrl+X затем Y и Enter
 # обновим зависимости
@@ -211,12 +211,29 @@ INTERFACESv4="enp3s2"
 # ------------------------------------------------------------------------
 # Добавляем следующее в /etc/dhcp/dhcpd.conf
 # ------------------------------------------------------------------------
+# comment out this lines
+# option domain-name ".ln";
+# option domain-name-servers ns1.example.org, ns2.example.org;
 
+# add this
+default-lease-time 600;
+max-lease-time 7200;
+ddns-update-style none;
+authoritative;
 
+subnet 17.10.1.0 netmask 255.255.255.0 {
+    # specify default gateway
+    option routers      17.10.1.1;
+    # specify subnet-mask
+    option subnet-mask  255.255.255.0;
+    option domain-name-servers 17.10.1.1;
+    # specify the range of leased IP address
+    range dynamic-bootp 17.10.1.2 17.10.1.254;
+}
 # ------------------------------------------------------------------------
 
-
-
+# restart DHCP server
+systemctl restart isc-dhcp-server 
 ```
 
 
