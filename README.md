@@ -332,28 +332,8 @@ We can edit our /etc/hosts on server and add domains for our ip's.
 Manual here: https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH
 
 Если мы хотим получать доступ к серверу по SSH, то стоит отключить возможность входа от суперпользователя и доступ по паролю.
-Изначально создаем пользователя и добавляем его в sudo
 
-```
-# создаем системного пользователя Debian
-sudo adduser <username>
-# добавляем пользователя в группу sudo
-sudo usermod -aG sudo <username>
-
-# проверим наличие созданного пользователя
-id <username>
-# перезаходим за созданного пользователя
-su - <username>
-# повышаем привелегии пользователя до root
-sudo su
-# выходим из-под root
-exit
-# выходим из-под созданного пользователя
-```
-
-В итоге мы создали нового системного пользователя в Debian <username>.
-
-Создаем ssh-ключ для данного пользователя
+Создаем ssh-ключ для пользователя (not root user)
 ```
 # установка ssh-server
 apt-get install openssh-server
