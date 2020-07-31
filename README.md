@@ -778,14 +778,14 @@ psql
 # создание базы данных под confluence и пользователя для atlassian продуктов
 CREATE DATABASE confluencedb with encoding='UNICODE';
 CREATE USER atlassianusr with password 'add-user-password';
-GRANT ALL PRIVILEGES ON DATABASE confluencedb TO atlasianusr;
+GRANT ALL PRIVILEGES ON DATABASE confluencedb TO atlassianusr;
 # создание базы данных под jira
 CREATE DATABASE jiradb with encoding='UNICODE';
-GRANT ALL PRIVILEGES ON DATABASE jiradb TO atlasianusr;
+GRANT ALL PRIVILEGES ON DATABASE jiradb TO atlassianusr;
 # вывести список доступных баз данных
-\l;
+\l
 # установка пароля для postgres
-psql -U postgres -c "ALTER USER postgres PASSWORD 'add-root-password'"
+ALTER USER postgres PASSWORD 'add-root-password'
 # выход
 \q
 exit
@@ -822,7 +822,7 @@ systemctl  <start | stop | status | restart> jira.service
 /home/atlassian/jira
 /home/atlassian/application-data/jira
 # конфиг сервера
-/home/atlassian/jira/conf/server.xmly
+/home/atlassian/jira/conf/server.xml
 ```
 
 Далее переходим к настройке jira в браузере по соответствующим IP-адресу и порту, где указываем данные для подключения к БД и в качестве базового URL [https://jira.ln] можем указать домен, который создадим далее, а также данные нового пользователя. 
@@ -855,63 +855,58 @@ mkdir /var/log/nginx/jira
 
 Добавляем следующий конфиг
 ```nginx
-proxy_cache_path /var/cache/nginx/jira levels=1:2 keys_zone=jira-cache:50m
-max_size=50m inactive=1440m;
+proxy_cache_path /var/cache/nginx/jira levels=1:2 keys_zone=jira-cache:10m 
+max_size=500m inactive=1440m;
 
-#SSL LISTENER
 upstream atlassian-jira {
-        server 17.10.1.1:17312 fail_timeout=0;
+	server 17.10.1.1:17312 fail_timeout=0;
 }
 
 server {
-        listen 443 ssl;
-        listen [::]:443 ssl;
-
-        ssl on;
+        listen 80;
+        listen [::]:80;
         server_name jira.ln;
+        return 301 https://$host$request_uri;
+}
+
+server {
+        listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+
+	ssl on;
+        server_name jira.ln;	
 	set $server_url 'jira.ln';
-	
+
         ssl_certificate     /home/certs/jira.ln/jira.ln.crt;
         ssl_certificate_key /home/certs/jira.ln/device.key;
 
-        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-        ssl_prefer_server_ciphers on;
-        ssl_dhparam /etc/nginx/dhparam.pem;
-	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';	
-        add_header Strict-Transport-Security max-age=15768000;
-        server_tokens off;
+        client_max_body_size 0;
 
-	# access_log off;
-        access_log /var/log/nginx/jira/jira.access.log;		
-        error_log /var/log/nginx/jira/jira.error.log;
+	## Proxy settings
+	proxy_max_temp_file_size    0;
+	proxy_connect_timeout      900;
+	proxy_send_timeout         900;
+	proxy_read_timeout         900;
+	proxy_buffer_size          4k;
+	proxy_buffers              4 32k;
+	proxy_busy_buffers_size    64k;
+	proxy_temp_file_write_size 64k;
+	proxy_intercept_errors     on;
+	proxy_cache jira-cache;
+	proxy_cache_key "$scheme://$host$request_uri";
+	proxy_cache_min_uses 1;
+	proxy_cache_valid 1440m;
+	auth_basic off;
 
-        client_max_body_size 50M;
-
-        ## Proxy settings
-        proxy_max_temp_file_size    0;
-        proxy_connect_timeout      900;
-        proxy_send_timeout         900;
-        proxy_read_timeout         900;
-        proxy_buffer_size          4k;
-        proxy_buffers              4 32k;
-        proxy_busy_buffers_size    64k;
-        proxy_temp_file_write_size 64k;
-        proxy_intercept_errors     on;
-
-        proxy_cache jira-cache;
-        proxy_cache_key "$scheme://$host$request_uri";
-        proxy_cache_min_uses 1;
-        proxy_cache_valid 1440m;
-        auth_basic off;
-	
         location / {
-                proxy_pass http://17.10.1.1:17312;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Host $server_name;
+		proxy_pass http://127.0.0.1:17312;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;		
+		proxy_set_header X-Forwarded-Host $server_name;
                 proxy_set_header X-Forwarded-Server $host;
 
+		## Proxy settings
                 set $do_not_cache 0;
                 if ($request_uri ~* ^(/secure/admin|/plugins|/secure/projects|/projects|/admin)) {
                         set $do_not_cache 1;
@@ -919,6 +914,7 @@ server {
                 proxy_cache_bypass $do_not_cache;
         }
 }
+
 ```
 
 Активируем конфиг и перезапускаем nginx:
