@@ -952,13 +952,9 @@ lsof -i :443
 Так как мы используем собственные сертификаты для SSl/HTTPS, нам необходимо добавить самоподписанный сертификат для выбранного домена в keystore для java tomcat. Для этого нужно преобразовать ранее выпущенный сертификат и затем его добавить. При преобразовании сертификата нас попросят ввести пароль, который мы используем в следующей команде при добавлении после ключа -srcstorepass - нужно заменить src-changeit на введенный пароль при конвертировании ключа. По умолчанию jira keystore имеет пароль changeit.
 
 ```
-openssl pkcs12 -export -in jira.ln/jira.ln.crt -inkey jira.ln/device.key \
-               -out servkeystore.p12 -name ca \
-               -CAfile rootCA.crt -caname root
+openssl pkcs12 -export -in jira.ln/jira.ln.crt -inkey jira.ln/device.key -out servkeystore.p12 -name ca -CAfile rootCA.crt -caname root
 
-keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 \
-			-destkeystore /home/atlassian/jira/jre/lib/security/cacerts 
-			-deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass src-changeit -validity 3650
+keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass 7w0*8wxHGvcC -validity 3650
 ```
 
 Посмотреть пользователя, который является системным для Jira можно так:
@@ -976,8 +972,8 @@ https://community.atlassian.com/t5/Jira-Software-questions/Jira-autostart-proble
 
 По умолчанию сервис Jira будет прописан в /etc/init.d/jira, но мы создадим сервис в system.d, а данный сервис на всякий случай перенесем в /opt (в качестве backup):
 ```
-# перенесем сервис по умолчанию
-mv /etc/init.d/jira /opt
+# перенесем сервис по умолчанию - бэкап
+mv /etc/init.d/jira /etc/init.d/jira.old
 # создадим свой сервис
 nano /lib/systemd/system/jira.service
 # добавим следующее
