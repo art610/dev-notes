@@ -1527,7 +1527,9 @@ mv /home/seafile/seafile-pro-server_7.1.6_x86-64_Ubuntu.tar.gz /home/seafile/ins
 
 # C отключенным шелом и одноименной группой
 useradd --system --comment "seafile" seafile --home-dir  /home/seafile -m -U -s /bin/false
-# задаем пароль
+# установим права на директорию пользователя
+chown seafile:seafile -R /home/seafile
+# задаем пароль пользователя
 passwd seafile
 
 # Предоставим Nginx, доступ в домашнюю директорию пользователя seafile
@@ -1541,19 +1543,9 @@ cd /home/seafile/seafile-pro-server-7.1.6
 # -------------------------------------------
 # Create ccnet, seafile, seahub conf using setup script
 # -------------------------------------------
-
-# -w <mysql-seafile-password> -r <mysql-root-password>
 # more on https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/deploying-seafile-with-mysql
 
-./setup-seafile-mysql.sh auto -u seafile -w Cj6yaRO#TWv6 -r g6O9DVxi8$n6 -p 17100
-
-# -------------------------------------------
-# Configure Seafile WebDAV Server(SeafDAV)
-# -------------------------------------------
-
-# -------------------------------------------
-# Configuring seahub_settings.py
-# -------------------------------------------
+./setup-seafile-mysql.sh auto -u seafile -w <mysql-seafile-password> -r <mysql-root-password> -p 17100
 
 python3 /home/seafile/seafile-pro-server-7.1.6/pro/pro.py setup --mysql --mysql_host=127.0.0.1 --mysql_port=3306 --mysql_user=seafile --mysql_password=Cj6yaRO#TWv6 --mysql_db=seahub_db
 
@@ -1586,8 +1578,13 @@ chown seafile:seafile -R /tmp/seafile-office-output/
 # -------------------------------------------
 
 cd ../conf
-nano seafdav.conf
+```
 
+# Seafile configs [/home/seafile/conf]
+
+## seafdav.conf
+
+```ini
 [WEBDAV]
 enabled = true
 port = 17200	# default 8080
@@ -1595,13 +1592,11 @@ fastcgi = false
 share_name = /seafdav
 ```
 
-# Seafile configs [/opt/seafile/conf]
-
 ## ccnet.conf
 
 ```ini
 [General]
-SERVICE_URL = http://17.10.1.1:17101
+SERVICE_URL = https://cloud.ln
 
 [Database]
 ENGINE = mysql
@@ -1660,11 +1655,7 @@ highlight = fvh
 index_office_pdf = true
 
 [OFFICE CONVERTER]
-enabled = true
-workers = 1
-## the max size of documents to allow to be previewed online, in MB. Default is 2 MB
-## Preview a large file (for example >30M) online will freeze the browser.
-max-size = 2
+enabled = false 
 
 [SEAHUB EMAIL]
 enabled = true
@@ -1743,7 +1734,7 @@ COMPRESS_CACHE_BACKEND = 'locmem'
 # SERVER_EMAIL                        = EMAIL_HOST_USER
 
 SITE_ROOT                           = '/'
-SITE_BASE                           = 'http://17.10.1.1'
+SITE_BASE                           = 'https://cloud.ln'
 SITE_NAME                           = 'Lnovus Dev Network'
 SITE_TITLE                          = 'Private Cloud'
 
@@ -1759,10 +1750,10 @@ ENABLE_SIGNUP                       = False
 ACTIVATE_AFTER_REGISTRATION         = False
 SEND_EMAIL_ON_ADDING_SYSTEM_MEMBER  = False
 SEND_EMAIL_ON_RESETTING_USER_PASSWD = False
-CLOUD_MODE                          = False
-ENABLE_WIKI                         = False
+CLOUD_MODE                          = True
+ENABLE_WIKI                         = True
 
-LOGIN_REMEMBER_DAYS                 = 1
+LOGIN_REMEMBER_DAYS                 = 30
 LOGIN_ATTEMPT_LIMIT                 = 3
 
 FILE_PREVIEW_MAX_SIZE               = 30 * 1024 * 1024
@@ -1770,7 +1761,7 @@ SESSION_COOKIE_AGE                  = 60 * 60 * 24 * 7 * 2
 SESSION_SAVE_EVERY_REQUEST          = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE     = False
 
-FILE_SERVER_ROOT                    = 'http://17.10.1.1/seafhttp'
+FILE_SERVER_ROOT                    = 'https://cloud.ln/seafhttp'
 ```
 
 # Start Seafile as service
@@ -1827,8 +1818,8 @@ WantedBy=multi-user.target
 
 Stop all earlie running processes for seafile/seahub:
 ```bash
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seafile.sh stop
-sudo -u seafile /home/seafile/seafile-pro-server-7.1.5/seahub.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.6/seafile.sh stop
+sudo -u seafile /home/seafile/seafile-pro-server-7.1.6/seahub.sh stop
 
 # kill all process
 pkill -9 -u seafile
