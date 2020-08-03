@@ -1006,10 +1006,10 @@ systemctl status jira.service
 # скачиваем установочный пакет
 mkdir /opt/confluence/ && cd /opt/confluence/
 # стоит проверить версию здесь https://www.atlassian.com/ru/software/confluence/download
-sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.6.1-x64.bin
+sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.6.2-x64.bin
 # даем права на исполнение и устанавливаем
-sudo chmod a+x atlassian-confluence-7.6.1-x64.bin
-sudo ./atlassian-confluence-7.6.1-x64.bin
+sudo chmod a+x atlassian-confluence-7.6.2-x64.bin
+sudo ./atlassian-confluence-7.6.2-x64.bin
 # в ходе установки указываем директории /home/atlassian/confluence и /home/atlassian/application-data/confluence, порты 17314 и 17318 и соглашаемся на установку системного демона (y)
 # на вопрос Start Confluence now? отвечаем n
 # перед первым запуском изменим настройки
@@ -1086,8 +1086,15 @@ upstream atlassian-confluence {
 }
 
 server {
-        listen 443 ssl;
-        listen [::]:443 ssl;
+        listen 80;
+        listen [::]:80;
+        server_name confluence.ln;
+        return 301 https://$host$request_uri;
+}
+
+server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
 
         ssl on;
         server_name confluence.ln;
@@ -1096,17 +1103,7 @@ server {
         ssl_certificate     /home/certs/confluence.ln/confluence.ln.crt;
         ssl_certificate_key /home/certs/confluence.ln/device.key;
 
-        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-        ssl_prefer_server_ciphers on;
-        ssl_dhparam /etc/nginx/dhparam.pem;
-	ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';	
-        add_header Strict-Transport-Security max-age=15768000;
-        server_tokens off;
-
-	access_log off;		
-        error_log /var/log/nginx/confluence/confluence.error.log;
-
-        client_max_body_size 500M;
+        client_max_body_size 0;
 
         ## Proxy settings
         proxy_max_temp_file_size    0;
@@ -1118,6 +1115,7 @@ server {
         proxy_busy_buffers_size    64k;
         proxy_temp_file_write_size 64k;
         proxy_intercept_errors     on;
+
         auth_basic off;
 	
         location / {
@@ -1127,7 +1125,6 @@ server {
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Host $server_name;
                 proxy_set_header X-Forwarded-Server $host;
-		
         }
 }
 ```
