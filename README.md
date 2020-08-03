@@ -1056,16 +1056,24 @@ systemctl restart dnsmasq
 Так как мы используем собственные сертификаты для SSl/HTTPS, нам необходимо добавить самоподписанный сертификат для выбранного домена в keystore для java tomcat. Для этого нужно преобразовать ранее выпущенный сертификат и затем его добавить. При преобразовании сертификата нас попросят ввести пароль, который мы используем в следующей команде при добавлении после ключа -srcstorepass - нужно заменить src-changeit на введенный пароль при конвертировании ключа. По умолчанию confluence keystore имеет пароль changeit.
 
 ```
+# create and add confluence key to confluence keystore
+
+openssl pkcs12 -export -in confluence.ln/confluence.ln.crt -inkey confluence.ln/device.key -out confluenceservkeystore.p12 -name confluence -CAfile rootCA.crt -caname confluenceroot
+
+keytool -importkeystore -srckeystore /home/certs/confluenceservkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias confluence -deststorepass changeit -srcstorepass 7w0*8wxHGvcC -validity 3650
+
+# add cofnluence key to jira keystore
+
+keytool -importkeystore -srckeystore /home/certs/confluenceservkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias confluence -deststorepass changeit -srcstorepass 7w0*8wxHGvcC -validity 3650
+
+# create and add jira key to jira keystore 
+
 openssl pkcs12 -export -in jira.ln/jira.ln.crt -inkey jira.ln/device.key -out jservkeystore.p12 -name jira -CAfile rootCA.crt -caname root
 
+keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass 7w0*8wxHGvcC -validity 3650
 
-# сертификаты для confluence
-keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
-keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
-
-# сертификаты для jira
-keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
-keytool -importkeystore -srckeystore /home/certs/servkeystore.p12 -destkeystore /home/atlassian/jira/jre/lib/security/cacerts -deststoretype pkcs12 -alias ca -deststorepass changeit -srcstorepass Lz5kSHc0WOs% -validity 3650
+# add jira key to confluence keystore
+keytool -importkeystore -srckeystore /home/certs/jservkeystore.p12 -destkeystore /home/atlassian/confluence/jre/lib/security/cacerts -deststoretype pkcs12 -alias jira -deststorepass changeit -srcstorepass 7w0*8wxHGvcC -validity 3650
 
 ```
 
