@@ -1179,6 +1179,9 @@ nano /home/atlassian/confluence/bin/user.sh
 
 Стоит также установить плагин Draw.io для создания диаграмм в Confluence. В управлении приложениями можно включить стандартные макросы HTML (по умолчанию они отключены). Не забываем их отключить при установке на production сервер.
 
+Домашняя директория Home Confluence расположится в /hpme/atlassian-application-data/confluence
+
+
 ## Установка GitLab
 
 ```
