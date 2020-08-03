@@ -1005,7 +1005,8 @@ systemctl status jira.service
 ```
 # скачиваем установочный пакет
 mkdir /opt/confluence/ && cd /opt/confluence/
-# стоит проверить версию здесь https://www.atlassian.com/ru/software/confluence/download
+# стоит выбирать версию, исходя из ранее установленной, чтобы восстановить данные из сделанных бэкапов
+# можно проверить последнюю версию здесь https://www.atlassian.com/ru/software/confluence/download
 sudo wget https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-7.6.2-x64.bin
 # даем права на исполнение и устанавливаем
 sudo chmod a+x atlassian-confluence-7.6.2-x64.bin
@@ -1181,6 +1182,53 @@ nano /home/atlassian/confluence/bin/user.sh
 
 Домашняя директория Home Confluence расположится в /hpme/atlassian-application-data/confluence
 
+## Создание бэкапов и восстановление
+
+### Бэкапы и восстановление Jira
+
+Как правило, файлы бэкапов создаются в директории <backups-drive-dir>/atlassian/application-data/jira/export. Бэкапы представляют собой xml файлы и attachments в архивах типа zip с именованием по соответствующим датам. Необходимо перенести выбранных архив в директорию /home/atlassian/application-data/jira/import/ и установить соответствующие права:
+
+```
+cp 2020-Jul-29--1900.zip  /home/atlassian/application-data/jira/import/
+chown jira:jira /home/atlassian/application-data/jira/import/2020-Jul-29--1900.zip
+chmod 777 /home/atlassian/application-data/jira/import/2020-Jul-29--1900.zip
+```
+
+Далее, открываем Jira в браузере и переходим в Administration -> System -> Import & Export -> Restore System и указываем имя архива, например, 2020-Jul-29--1900.zip, а затем Restore и ждем завершения операции. 
+
+Стоит учитывать, что прикрепленные файлы для некоторых задач могут не открыться, а также, что может появиться ошибка в Application links, т.к. возможно, Confluence или др. сервис, еще не был установлен, или подключен к данному экземпляру Jira. 
+Стоит также выполнить Full Re-Index.
+
+### Бэкапы и восстановление Confluence
+
+Для Production рекомендуется отдельно создавать бэкапы базы данных и бэкапы домашней директории Confluence. В данном случае, изначально делаем бэкап базы данных Postgres:
+```
+su - postgres
+# бэкап отдельной базы 
+pg_dump dbname > dbname.bak
+# бэкап всех баз данных PostreSQL
+pg_dumpall > /home/postgres_backups/pg_dump_all.sql > /home/postgres_backups/pg_dump.log
+# добавить задание в крон можно так
+# откроем список заданий для пользователя postgres
+crontab -e -u postgres
+# добавим задание по бэкапам на 00:30 ночи на каждый день
+# для всех баз данных
+30 0 * * * pg_dumpall > /home/postgres_backups/pg_dump_all.sql > /home/postgres_backups/pg_dump.log
+# для отдельной базы confluence
+30 0 * * * pg_dump dbname > dbname.bak
+
+# восстанавливать базу данных можно следующим образом
+# изначально установим confluence 
+# после процедуры настройки системы в браузере удалим базу данных "по умолчанию"
+dropdb confluencedb
+# создадим новую пустую базу данных
+createdb confluencedb
+# восстановим базу данных из бэкапа 
+# восстановление из общего бэкапа
+psql -U <username> -d <confluence_database_name> -f <all-postgresql-dump.sql>
+# восстановление из отдельного бэкапа базы только для confgluence
+psql -d <confluence_database_name> -f <confluence-dump.sql>
+```
 
 ## Установка GitLab
 
@@ -2490,22 +2538,7 @@ ps aux —sort=-pcpu,+pmem
 ps -e -o pid,comm,etime
 ```
 
-# Восстановление Jira и Confluence из бэкапов
 
-## Восстановление Jira
-
-Как правило, файлы бэкапов создаются в директории <backups-drive-dir>/atlassian/application-data/jira/export. Бэкапы представляют собой xml файлы и attachments в архивах типа zip с именованием по соответствующим датам. Необходимо перенести выбранных архив в директорию /home/atlassian/application-data/jira/import/ и установить соответствующие права:
-
-```
-cp 2020-Jul-29--1900.zip  /home/atlassian/application-data/jira/import/
-chown jira:jira /home/atlassian/application-data/jira/import/2020-Jul-29--1900.zip
-chmod 777 /home/atlassian/application-data/jira/import/2020-Jul-29--1900.zip
-```
-
-Далее, открываем Jira в браузере и переходим в Administration -> System -> Import & Export -> Restore System и указываем имя архива, например, 2020-Jul-29--1900.zip, а затем Restore и ждем завершения операции. 
-
-Стоит учитывать, что прикрепленные файлы для некоторых задач могут не открыться, а также, что может появиться ошибка в Application links, т.к. возможно, Confluence или др. сервис, еще не был установлен, или подключен к данному экземпляру Jira. 
-Стоит также выполнить Full Re-Index.
 
 ## DynDNS
 
