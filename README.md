@@ -2382,20 +2382,14 @@ crontab -e
 # добавим следующие задачи
 30 22 * * * seaf-cli start
 00 23 * * * seaf-cli stop
-# стоит учесть, что клиент не запуститься автоматически, после перезагрузки компьютера (по умолчанию)
+# стоит учесть, что клиент не запустится автоматически после перезагрузки компьютера (по умолчанию)
 # посмотреть текущий статус можно так
 seaf-cli status
+# часто бывают проблемы с самоподписанными сертификатами..
 ```
 
-## PostgreSQL backup
 
-```
-crontab -e -u postgres
-
-30 0 * * * pg_dumpall > /home/postgres_backups/pg_dump_all.sql > /home/postgres_backups/pg_dump.log
-```
-
-## All system backups using rsync and cron
+## Форматируем внешний диск и создаем разделы
 
 Для локального сервера используем дополнительный жесткий диск, на котором будем хранить резервные копии.
 Изначально потребуется отформатировать внешний жесткий диск:
@@ -2442,34 +2436,19 @@ sudo mount --label="ext1" /mnt/
 df -h /dev/sdb1
 ```
 
-Резервное копирование всей системы, кроме временных директорий и файлов:
+## Резервное копирование баз данных PostgreSQL
+
 ```
-# создадим скрипт, который будем запускать через cron
-nano /usr/local/bin/cron_local_backup.sh
-
-# -----------------------------------------------------------------------
-# добавим следующее
-# -----------------------------------------------------------------------
-#!/bin/bash
-
-mount /dev/sdb1 /mnt/backups
-rsync -aAXvh --delete / --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} /mnt/backups
-umount /dev/sdb1
-
-# -----------------------------------------------------------------------
-
-# дадим права на исполнение скрипта
-chmod +x /usr/local/bin/cron_local_backup.sh
-# добавим скрипт в cron для выполнения в 23-10 вечера, каждый день
-crontab -e
-0 23 * * * /usr/local/bin/cron_local_backup.sh
+# создаем директорию для бэкапов
+mkdir /home/postgres_backups
+chown postgres:postgres /home/postgres_backups
+# создаем задание в cron
+crontab -e -u postgres
+# добавляем следующее
+00 23 * * * pg_dumpall > /home/postgres_backups/pg_dump_all.sql > /home/postgres_backups/pg_dump.log
 ```
 
-Теперь мы настроили резервное копирование Linux на подключенный внешний диск, причем удаление файлов в системе будет приводить к их удалению в резервной копии. Стоит заметить, что в данном случае, восстановление по ошибке удаленного файла, нужно произвести до начала обновления резервной копии, то есть до вечера текущего дня.
-
-В Windows 10 достаточно настроить точки восстановления в Settings -> Recovery и Task Scheduler -> Microsoft -> Windows -> SystemRestore -> Edit -> Triggers, а затем, дополнительно создать образ всей настроенной системы, и делать инкрементальные копии посредством Acronis True Image. При необходимости, можно также создать диск восстановления через Acronis TI, либо можно использовать Windows 10 File History.
-
-## MariaDB (MySQL) Backups
+## Резервное копирование баз данных MariaDB (MySQL)
 
 Для создания бэкапа потребуется создать директорию, а затем добавить в cron соответствующую команду:
 ```
@@ -2481,24 +2460,70 @@ nano ~/.my.cnf
 [mysqldump]
 user=mysqluser
 password=secret
-# теперь можно создать задачу в cron
-crontab -e 
-# добавляем следующее
-20 22 * * * mysqldump --all-databases --single-transaction --quick --lock-tables=false > /home/mysql_backups/dump-$(date +%F).sql -u root
-# добавим также задачу синхронизации бэкапа с внешним диском
+# пробуем создать дамп БД
+mysqldump --all-databases --single-transaction --quick --lock-tables=false > /home/mysql_backups/dump-$(date +%F).sql -u root
 # примонтируем внешний диск
 mount /dev/sdb1 /mnt/backups
 # создадим на внешнем диске требуемую директорию
 mkdir /mnt/backups/mysql_backups
 # добавим задачу синхронизации
-rsync -aAXvh --delete /home/mysql_backups /mnt/backups/mysql_backups
+rsync -aAXvh --delete /home/mysql_backups/* /mnt/backups/mysql_backups
 # отмонтируем диск
 umount /dev/sdb1
+
+# теперь можно создать задачу в cron
+crontab -e 
+# добавляем следующее
+50 22 * * * mysqldump --all-databases --single-transaction --quick --lock-tables=false > /home/mysql_backups/dump-$(date +%F).sql -u root
 ```
 
-# Gitlab Backups
 
+## Резервное копирование файлов
 
+```
+# примонтируем диск и создадим нужные директории на нем
+mount /dev/sdb1 /mnt/backups
+mkdir /mnt/backups/atlassian
+mkdir /mnt/backups/certs
+mkdir /mnt/backups/jupyter
+mkdir /mnt/backups/seafile
+mkdir /mnt/backups/mysql_backups
+mkdir /mnt/backups/postgres_backups
+mkdir /mnt/backups/nginx_configs
+
+# создадим скрипт, который будем запускать через cron
+nano /usr/local/bin/cron_local_backup.sh
+
+# -----------------------------------------------------------------------
+# добавим следующее
+# -----------------------------------------------------------------------
+#!/bin/bash
+
+mount /dev/sdb1 /mnt/backups
+
+rsync -aAXvh --delete /home/atlassian/* /mnt/backups/atlassian
+rsync -aAXvh /home/certs/* /mnt/backups/certs
+rsync -aAXvh --delete /home/jupyter/* /mnt/backups/jupyter
+rsync -aAXvh --delete /home/seafile/* /mnt/backups/seafile
+rsync -aAXvh --delete /home/mysql_backups/* /mnt/backups/mysql_backups
+rsync -aAXvh --delete /home/postgres_backups/* /mnt/backups/postgres_backups
+rsync -aAXvh /etc/nginx/sites-available/* /mnt/backups/nginx_configs
+rsync -aAXvh /etc/nginx/nginx.conf /mnt/backups/nginx_configs
+
+umount /dev/sdb1
+
+# -----------------------------------------------------------------------
+
+# дадим права на исполнение скрипта
+chmod +x /usr/local/bin/cron_local_backup.sh
+# добавим скрипт в cron для выполнения в 22-00 вечера, каждый день
+crontab -e
+50 22 * * * /usr/local/bin/cron_local_backup.sh
+```
+
+Теперь мы настроили резервное копирование Linux на подключенный внешний диск, причем удаление файлов в системе будет приводить к их удалению в резервной копии. Стоит заметить, что в данном случае, восстановление по ошибке удаленного файла, нужно произвести до начала обновления резервной копии, то есть до вечера текущего дня.
+
+В Windows 10 достаточно настроить точки восстановления в Settings -> Recovery и Task Scheduler -> Microsoft -> Windows -> SystemRestore -> Edit -> Triggers, а затем, дополнительно создать образ всей настроенной системы, и делать инкрементальные копии посредством Acronis True Image. При необходимости, можно также создать диск восстановления через Acronis TI, либо можно использовать Windows 10 File History.
 
 
 # Полезные команды
