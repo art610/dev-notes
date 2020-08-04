@@ -2362,6 +2362,8 @@ seaf-cli init -d ~/seafile-client
 seaf-cli start
 # проверяем статус клиента
 seaf-cli status
+# если используем самоподписанные сертификаты, то пропустим их верификацию
+seaf-cli config -k disable_verify_certificate -v true
 ```
 
 # Backups
