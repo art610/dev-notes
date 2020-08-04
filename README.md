@@ -1891,7 +1891,7 @@ systemctl status seafile
 systemctl status seahub
 ```
 
-You can see the logs of the service using `journalctl -u wiki`
+You can see the logs of the service using `journalctl -u seafile`
 
 More info: https://seafile.gitbook.io/seafile-server-manual/deploying-seafile-under-linux/other-deployment-notes/start-seafile-at-system-bootup
 
@@ -1969,7 +1969,7 @@ crontab -e
 BRANDING_CSS = 'custom/custom.css'
 ```
 
-Dark theme: https://github.com/u-alexey/seafile_ce-edition_custom_theme
+Темная тема оформления: https://github.com/u-alexey/seafile_ce-edition_custom_theme
 
 ## Administration
 ```
@@ -2182,13 +2182,6 @@ http {
 	# number of requests client can make over keep-alive -- for testing environment
 	keepalive_requests 100000;
 
-	# gzip_vary on;
-	# gzip_proxied any;
-	# gzip_comp_level 6;
-	# gzip_buffers 16 8k;
-	# gzip_http_version 1.1;
-	# gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-
 	##
 	# Virtual Host Configs
 	##
@@ -2349,8 +2342,48 @@ ln -s /etc/nginx/sites-available/jupyter.conf /etc/nginx/sites-enabled/jupyter.c
 systemctl restart nginx
 ```
 
+## Установка консольного клиента Seafile (seaf-cli)
+
+```
+# добавим ключ для установки клиента seafile из репозитория
+wget -O - http://linux-clients.seafile.com/seafile.key | sudo apt-key add -
+# добавляем репозиторий
+sudo bash -c "echo 'deb [arch=amd64] http://linux-clients.seafile.com/seafile-deb/buster/ stable main' > /etc/apt/sources.list.d/seafile.list"
+# обновляемся
+sudo apt update
+# устанавливаем консольный клиент для seafile
+sudo apt-get install -y seafile-cli
+
+# создаем директорию для настроек
+mkdir ~/seafile-client 
+# инициализируем клиента с указанной директории настроек
+seaf-cli init -d ~/seafile-client
+# запускаем клиент
+seaf-cli start
+# проверяем статус клиента
+seaf-cli status
+```
 
 # Backups
+
+## Добавляем домашнюю директорию jupyter в частное облако Seafile
+
+По умолчанию домашней директорией для Jupyter была назначена /home/jupyter. Теперь нам надо установить seaf-cli (консольный клиент для seafile) и синхронизировать с новой библиотекой домашнюю директорию Jupyter, чтобы добавляемые файлы в Jupyter, сразу появлялись в нашем облаке. Тогда, взяв ссылку с облака, мы можем добавлять Jupyter Notebooks в Confluence посредством соответствующего плагина. 
+Плюсом ко всему, мы можем синхронизировать облако с компьютером в созданной сети и т.п.
+```
+# создаем библиотеку в облаке seafile и смотрим её id в адресной строке браузера (символы через тире)
+# синхронизируем домашнюю директорию jupyter
+seaf-cli sync -l "the id of the library" -s  https://cloud.ln -d /home/jupyter -u artif467@gmail.com -p "password"
+# синхронизация происходит автоматически, если запущен клиент seaf-cli
+# для запуска клиента в определенное время или его остановки, воспользуемся cron
+crontab -e
+# добавим следующие задачи
+30 22 * * * seaf-cli start
+00 23 * * * seaf-cli stop
+# стоит учесть, что клиент не запуститься автоматически, после перезагрузки компьютера (по умолчанию)
+# посмотреть текущий статус можно так
+seaf-cli status
+```
 
 ## PostgreSQL backup
 
