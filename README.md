@@ -187,7 +187,7 @@ ip a
 sudo ifup enp3s2
 ```
 
-## Установка DHCP и DNS сервера DNSMasq 
+## Установка DHCP и DNS сервера 
 
 Установка и настройка DHCP сервера [источник]: https://www.server-world.info/en/note?os=Debian_10&p=dhcp&f=1
 
