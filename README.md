@@ -2511,7 +2511,7 @@ history | grep -i <command_part>
 # выполнение команды из истории
 !<command number>
 # выполнить предыдущую команду от root
-!!
+sudo !!
 
 # список задач в cron для конкретного пользователя
 crontab -u <username> -l
