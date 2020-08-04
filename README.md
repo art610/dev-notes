@@ -1,4 +1,4 @@
-# MiniDevLab on Linux (local network dev host)
+# Mini Dev Lab on Linux (local network dev host)
 
 ## Первоначальная настройка
 
