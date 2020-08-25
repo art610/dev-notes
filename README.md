@@ -606,6 +606,9 @@ CREATE DATABASE wikijsdb with encoding='UNICODE';
 CREATE USER wikijsdbuser with password 'naI@93*w';
 GRANT ALL PRIVILEGES ON DATABASE wikijsdb TO wikijsdbuser;
 \q
+psql -d wikijsdb
+CREATE EXTENSION pg_trgm;
+\q
 exit
 ```
 
@@ -638,12 +641,6 @@ db:
   db: wikijsdb
 ```
 
-Data folder on the end of file:
-
-```
-dataPath: /home/wiki/data
-```
-
 Offline Mode
 ```
 offline: true
@@ -672,9 +669,10 @@ netstat -nlp | grep 5432
 useradd --system --comment "WikiJS User" wikiuser --home-dir  /home/wiki
 chown wikiuser:wikiuser -R /home/wiki
 # зададим пароль пользователя
-passwd wikiuser	# 1@7OrIX7Fp6v
+# passwd wikiuser	# 1@7OrIX7Fp6v
 # добавим пользователя в группу nginx
-usermod -a -G wikiuser www-data
+usermod -a -G www-data wikiuser
+usermod -a -G postgres wikiuser
 ```
 
 ```
@@ -785,24 +783,14 @@ wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd6
 sudo dpkg -i pandoc-2.10.1-1-amd64.deb
 # проверяем
 pandoc -v
-# устанавливаем sharp - заходим за пользователя для wiki
-cd /home/wiki
-npm install sharp 
-# для установки из-под root используем флаг --unsafe-perm
 
 # перезапускаем и проверяем
 service wiki restart
 service nginx restart 
 
-# если возникнут проблемы https://github.com/nodejs/help/issues/2644
-cd /home/wiki
-npm cache clean --force
-# delete node_modules folder
-rm -R node_modules
-# delete package-lock.json file
-rm package-lock.json
-npm install
 ```
+
+При установке sharp возникают проблемы, и нет официальной документации, остальные решения пока еще не помогли, поэтому стоит пропустить данный шаг.
 
 
 # Установка Jira & Confluence
