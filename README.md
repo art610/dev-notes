@@ -637,8 +637,13 @@ db:
   host: localhost
   port: 5432
   user: wikijsdbuser
-  pass: naI@93*w
+  pass: password
   db: wikijsdb
+```
+
+Bind IP:
+```
+bindIP: 127.0.0.1
 ```
 
 Offline Mode
@@ -669,7 +674,7 @@ netstat -nlp | grep 5432
 useradd --system --comment "WikiJS User" wikiuser --home-dir  /home/wiki
 chown wikiuser:wikiuser -R /home/wiki
 # зададим пароль пользователя
-# passwd wikiuser	# 1@7OrIX7Fp6v
+# passwd wikiuser
 # добавим пользователя в группу nginx
 usermod -a -G www-data wikiuser
 usermod -a -G postgres wikiuser
