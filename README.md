@@ -793,6 +793,15 @@ npm install sharp
 # перезапускаем и проверяем
 service wiki restart
 service nginx restart 
+
+# если возникнут проблемы https://github.com/nodejs/help/issues/2644
+cd /home/wiki
+npm cache clean --force
+# delete node_modules folder
+rm -R node_modules
+# delete package-lock.json file
+rm package-lock.json
+npm install
 ```
 
 
