@@ -785,7 +785,7 @@ wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd6
 sudo dpkg -i pandoc-2.10.1-1-amd64.deb
 # проверяем
 pandoc -v
-# устанавливаем sharp
+# устанавливаем sharp - использовать стандартного пользователя (не root)
 npm install sharp
 
 # перезапускаем и проверяем
