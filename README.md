@@ -785,12 +785,12 @@ wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd6
 sudo dpkg -i pandoc-2.10.1-1-amd64.deb
 # проверяем
 pandoc -v
-# устанавливаем sharp - использовать стандартного пользователя (не root)
-npm install sharp
+# устанавливаем sharp
+npm install sharp --unsafe-perm
 
 # перезапускаем и проверяем
 service wiki restart
-service nginx restart
+service nginx restart 
 ```
 
 
