@@ -774,6 +774,24 @@ ln -s /etc/nginx/sites-available/wikijs.conf /etc/nginx/sites-enabled/wikijs.con
 service nginx restart
 ```
 
+### Установим дополнительные сервисы
+
+Выбираем последнюю версию на https://github.com/jgm/pandoc/releases/tag/2.10.1
+
+```bash
+# скачиваем deb пакет
+wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb
+# устанавливаем
+sudo dpkg -i pandoc-2.10.1-1-amd64.deb
+# проверяем
+pandoc -v
+# устанавливаем sharp
+npm install sharp
+
+# перезапускаем и проверяем
+service wiki restart
+service nginx restart
+```
 
 
 # Установка Jira & Confluence
