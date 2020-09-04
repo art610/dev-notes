@@ -602,9 +602,9 @@ Create postgres user for wikijs:
 ```
 su - postgres
 psql
-CREATE DATABASE wikijsdb with encoding='UNICODE';
-CREATE USER wikijsdbuser with password 'naI@93*w';
-GRANT ALL PRIVILEGES ON DATABASE wikijsdb TO wikijsdbuser;
+CREATE DATABASE <wikijsdb> with encoding='UNICODE';
+CREATE USER <wikijsdbuser> with password '<wikijsdbusrpassword>';
+GRANT ALL PRIVILEGES ON DATABASE <wikijsdb> TO <wikijsdbuser>;
 \q
 psql -d wikijsdb
 CREATE EXTENSION pg_trgm;
@@ -867,7 +867,7 @@ cd /home/certs
 # редактируем хосты
 nano /etc/hosts
 # добавляем запись с доменом
-17.10.1.1       jira jira.ln
+127.0.0.1       jira jira.ln
 # сохраняем и перезапускаем DNS
 systemctl restart dnsmasq
 ```
@@ -1329,7 +1329,7 @@ sudo nano /etc/gitlab/gitlab.rb
 gitlab_rails['db_host'] = '127.0.0.1'
 gitlab_rails['db_port'] = 5432
 gitlab_rails['db_username'] = "gitlabusr"
-gitlab_rails['db_password'] = "bFET9BD7!Wwc"
+gitlab_rails['db_password'] = "gitlabusrpassword"
 
 # force ssl on all connections defined in trust_auth_cidr_addresses and md5_auth_cidr_addresses
 postgresql['hostssl'] = false
